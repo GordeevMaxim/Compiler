@@ -339,7 +339,6 @@ void ReadErrors()
 /*функция печати кода символа в файл*/
 void PrintSym()
 {
-	//cout << " " << Symbol;
 	fprintf(file_rezult_lex, "%u ", Symbol);
 }
 /*функция печати синтаксической ошибки в файл с ошибками*/

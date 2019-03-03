@@ -1,0 +1,20 @@
+             Работает Pascal - компилятор
+                   Листинг программы
+   1  program af;
+   2  begin {*)начало проги********
+   3  a-
+   4  end.
+   5  :(:':::'
+   6  -5      -12456666666666666666666667
+   7     @ $ -455
+   8     ..
+   9     -327.0e    +++5
+  10  dd  fhfhfhdgdgggfhfhppppppppppppppppppppppppppppppppppppppppfdffghhhhhhh rt; 
+  11  . do for while
+  12  *)-
+  13  gfhgfh fg.
+  14  gfhgfh fg.
+**01**         ^ ошибка код 86
+****** комментарий не закрыт
+
+Кoмпиляция окончена: ошибок - 1!

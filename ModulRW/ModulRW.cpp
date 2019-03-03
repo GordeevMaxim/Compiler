@@ -127,7 +127,7 @@ unsigned Symbol,						//код символа
 int nextDigit;							//распознаная цифра
 int intConstant;						//целая константа
 int intE;								//показатель вещественного числа
-float realConstant;						//вещественная константа
+double realConstant;					//вещественная константа
 float mn;
 FILE *file_program, 					// файл с текстом программы
 	 *file_place_err,					// файл с ошибками
@@ -326,7 +326,6 @@ void Error(unsigned errorcode, unsigned number_str, unsigned number_pos)
 /*функция чтения ошибок из файла с ошибками*/
 void ReadErrors()
 {
-	unsigned number_str, number_pos, number_code;
 	/*зануляем значения*/
 	for (int i = 0; i < ErrMax; i++)													 //обнуление таблицы ошибок
 	{
@@ -389,7 +388,7 @@ void End_Comment()
 		NextCh();
 }
 /*определение числа*/
-void DetermineTheNumber()
+void DetermineTheNumber(int sign)
 {
 	/*
 		Принцип работы алгоритма для чтения чсловых констант:
@@ -413,14 +412,13 @@ void DetermineTheNumber()
 		{
 			/*целая константа превышает предел*/
 			err_203 = true;
-			intConstant = 0;
 			while (isdigit(ch))
 				NextCh();
 		}
 	}
 	if ((ch == '.') && ((NextCh() >= '0') && (ch <= '9') || ch == ' '))
 	{
-		realConstant = float(intConstant);
+		realConstant = (double)(intConstant);
 		while ((ch >= '0') && (ch <= '9'))
 		{
 			nextDigit = ch - '0';
@@ -468,14 +466,15 @@ void DetermineTheNumber()
 					else { positionnow.charnumber - 2; }
 				}
 			}
-			realConstant = realConstant * powf(10, intE);
+			realConstant *= powf(10, intE);
 		}
+		realConstant *= sign;
 		Symbol = realc;
 		if (realConstant > maxreal)
 		{
 			PrintErrorSym(207, token);
 		}
-		if (realConstant < -maxreal - 1)
+		if (realConstant < -maxreal)
 		{
 			PrintErrorSym(206, token);
 		}
@@ -486,8 +485,8 @@ void DetermineTheNumber()
 		{
 			PrintErrorSym(203, token);
 		}
+		intConstant *= sign;
 		Symbol = integerc;
-		//positionnow.charnumber--;
 	}
 }
 /*функция чтения очередной лексемы*/
@@ -507,7 +506,7 @@ void NextSym()
 	switch (ch >= '0' && ch <= '9' ? 1 : ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) ? 2 : ch)
 	{
 		case 1:
-			DetermineTheNumber();
+			DetermineTheNumber(1);
 			break;
 		case 2:
 			//ch = ch_first;
@@ -608,7 +607,7 @@ void NextSym()
 			break;
 		case '-':
 			if (NextCh() >= '0' && ch <= '9')
-				DetermineTheNumber();
+				DetermineTheNumber(-1);
 			else {
 				Symbol = minusc;
 			}

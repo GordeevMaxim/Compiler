@@ -1,12 +1,12 @@
 program af;
-begin {*)начало проги********
+begin {*)начало проги********}
 a-
 end.
 :(:':::'
 -5      -12456666666666666666666667
    @ $ -455
    ..
-   -327.0e    +++5
+   -102700.05
 dd  fhfhfhdgdgggfhfhppppppppppppppppppppppppppppppppppppppppfdffghhhhhhh rt; 
 . do for while
 *)-

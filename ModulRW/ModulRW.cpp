@@ -469,7 +469,7 @@ void DetermineTheNumber(int sign)
 			realConstant *= powf(10, intE);
 		}
 		realConstant *= sign;
-		Symbol = realc;
+		Symbol = realc;//
 		if (realConstant > maxreal)
 		{
 			PrintErrorSym(207, token);

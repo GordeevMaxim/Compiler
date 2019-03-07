@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <map>
 #include <vector>
 
 #define ErrMax 99						//максимальное  кол-во ошибок в программе
@@ -12,86 +13,72 @@
 #define MAX_IDENT   12
 #define bad_Symbol 1000
 #define MAX_DL_IDENT 63
-#define maxint 32767
+#define maxint 2147483647
 #define MAX_DL_STRINGC 255
-#define maxreal 1023.91938797167
+#define maxreal 2147483647.0 
+
+using namespace std;
 
 struct key {
 	unsigned CodeKey;
 	char     NameKey[15];
 };
-static struct key  KeyWords[64] =
+map <string, unsigned> KeyWords =
 /* таблица ключевых слов и их кодов 		*/
 {
-		  { ident," "},
-		  { dosy, "do"},
-		  { ifsy, "if"},
-		  { insy, "in"},
-		  { ofsy, "of"},
-		  { orsy, "or"},
-		  { tosy, "to"},
-		  { ident,"  "},
-		  { andsy,"and"},
-		  { divsy,"div"},
-		  { endsy,"end"},
-		  { forsy,"for"},
-		  { modsy,"mod"},
-		  { nilsy,"nil"},
-		  { notsy,"not"},
-		  { setsy,"set"},
-		  { varsy,"var"},
-		  { ident,"   "},
-		  { casesy,"case"},
-		  { elsesy,"else"},
-		  { filesy,"file"},
-		  { gotosy,"goto"},
-		  { onlysy,"only"},
-		  { thensy,"then"},
-		  { typesy,"type"},
-		  { unitsy,"unit"},
-		  { usessy,"uses"},
-		  { withsy,"with"},
-		  { ident, "    "},
-		  { arraysy,"array"},
-		  { beginsy,"begin"},
-		  { constsy,"const"},
-		  { labelsy,"label"},
-		  { untilsy,"until"},
-		  { whilesy,"while"},
-		  { ident,  "     "},
-		  { exportsy,"export"},
-		  { importsy,"import"},
-		  { downtosy,"downto"},
-		  { modulesy,"module"},
-		  { packedsy,"packed"},
-		  { recordsy,"record"},
-		  { repeatsy,"repeat"},
-		  { vectorsy,"vector"},
-		  { stringsy,"string"},
-		  { ident,   "      "},
-		  { forwardsy,"forward"},
-		  { processsy,"process"},
-		  { programsy,"program"},
-		  { segmentsy,"segment"},
-		  { ident,    "       "},
-		  { functionsy,"function"},
-		  { separatesy,"separate"},
-		  { ident,     "        "},
-		  { interfacesy,"interface"},
-		  { proceduresy,"procedure"},
-		  { qualifiedsy,"qualified"},
-		  { ident,      "         "},
-		  { ident,      "          "},
-		  { ident,      "           "},
-		  { ident,      "            "},
-		  { ident,      "             "},
-		  { implementationsy,"implementation"},
-		  { ident,        "              "}
+	{ "do", dosy},
+	{ "if", ifsy},
+	{ "in", insy},
+	{ "of", ofsy},
+	{ "or", orsy},
+	{ "to", tosy},
+	{ "and", andsy},
+	{ "div", divsy},
+	{ "end", endsy},
+	{ "for", forsy},
+	{ "mod" ,modsy},
+	{ "nil", nilsy},
+	{ "not", notsy},
+	{ "set", setsy},
+	{ "var", varsy},
+	//{ TRUE, "TRUE"},
+	{ "case", casesy},
+	{ "else", elsesy},
+	{ "file", filesy},
+	{ "goto", gotosy},
+	{ "only", onlysy},
+	{ "then", thensy},
+	{ "type", typesy},
+	{ "unit", unitsy},
+	{ "uses", usessy},
+	{ "with", withsy},
+	//{ FALSE, "FALSE" },
+	{ "array", arraysy},
+	{ "begin", beginsy},
+	{ "const", constsy},
+	{ "label", labelsy},
+	{ "until", untilsy},
+	{ "while", whilesy},
+	{ "export", exportsy},
+	{ "import", importsy},
+	{ "downto", downtosy},
+	{ "module", modulesy},
+	{ "packed", packedsy},
+	{ "record", recordsy},
+	{ "repeat", repeatsy},
+	{ "vector", vectorsy},
+	{ "string", stringsy},
+	{ "forward", forwardsy},
+	{ "process", processsy},
+	{ "program", programsy},
+	{ "segment", segmentsy},
+	{ "function", functionsy},
+	{ "separate", separatesy},
+	{ "interface", interfacesy},
+	{ "procedure", proceduresy},
+	{ "qualified", qualifiedsy},
+	{ "implementation", implementationsy},
 };
-
-/* массив номеров строк с кодом ident: 	*/
-int short last[15] = { -1,0,7,17,28,35,45,50,53,57,58,59,60,61,63 };
-using namespace std;
 
 struct textposition
 {
@@ -118,20 +105,18 @@ char ch = '-';							// текущая литера
 char line[90] = "";						// текущая строка
 char **MsgErr = new char *[ErrCount];	//массив сообщений об ошибках
 int flag;
-int flag_comment;
 bool err_203;
 char name[80];							//лексема
 int lname;								//длина лексемы
 unsigned Symbol,						//код символа
 		 len_c;							//длина строковой констатнты
 int nextDigit;							//распознаная цифра
-int intConstant;						//целая константа
+long int intConstant;						//целая константа
 int intE;								//показатель вещественного числа
 double realConstant;					//вещественная константа
+bool boolConstant;						//логическая константа
 float mn;
 FILE *file_program, 					// файл с текстом программы
-	 *file_place_err,					// файл с ошибками
-	 *file_rez_err,						// файл с выводом лексичских ошибок
 	 *file_rezult_lex;					// файл результата работы лексического анализатора
 ofstream file_listing;					// файл листинга программы
 
@@ -343,11 +328,7 @@ void PrintSym()
 /*функция печати синтаксической ошибки в файл с ошибками*/
 void PrintErrorSym(unsigned errorcode, textposition position)
 {
-	//flag_err = true;
-	//PrintSym();
-	//ErrInx++;
 	Error(errorcode, position.linenumber, position.charnumber);
-	fprintf(file_rez_err, "%d %d %d\n", position.linenumber, position.charnumber, errorcode);
 }
 /*функция чтения очередной литеры строки*/
 char NextCh()
@@ -413,7 +394,11 @@ void DetermineTheNumber(int sign)
 			/*целая константа превышает предел*/
 			err_203 = true;
 			while (isdigit(ch))
+			{
+				nextDigit = ch - '0';
+				intConstant = 10 * intConstant + nextDigit;
 				NextCh();
+			}
 		}
 	}
 	if ((ch == '.') && ((NextCh() >= '0') && (ch <= '9') || ch == ' '))
@@ -494,10 +479,8 @@ void NextSym()
 {
 	int nextnextDigit = 0;
 	int lname;
-	int i;
 
 	flag = 0;
-	int flag_com = 0;
 	while (ch == ' ')
 		NextCh();
 	token.linenumber = positionnow.linenumber;
@@ -519,11 +502,23 @@ void NextSym()
 			name[lname] = '\0';
 			if (lname < MAX_DL_IDENT)
 			{
-				strcpy_s(KeyWords[last[lname]].NameKey, name);
-				i = last[lname - 1] + 1;
-				while (strcmp(KeyWords[i].NameKey, name) != 0)
-					i++;
-				Symbol = KeyWords[i].CodeKey;
+				if (!strcmp(name, "TRUE"))
+				{
+					Symbol = TRUE;
+					boolConstant = true;
+				}
+				else if (!strcmp(name, "FALSE"))
+				{
+					Symbol = FALSE;
+					boolConstant = false;
+				}
+				else
+				{
+					if (KeyWords.count(name))
+						Symbol = KeyWords.find(name)->second;
+					else
+						Symbol = ident;
+				}
 			}
 			else
 			{
@@ -606,11 +601,12 @@ void NextSym()
 			NextCh();
 			break;
 		case '-':
-			if (NextCh() >= '0' && ch <= '9')
-				DetermineTheNumber(-1);
-			else {
+			//if (NextCh() >= '0' && ch <= '9')
+				//DetermineTheNumber(-1);
+			//else {
 				Symbol = minusc;
-			}
+			//}
+			NextCh();
 			break;
 		case '/':
 			Symbol = slashc;
@@ -638,8 +634,6 @@ void NextSym()
 				PrintSym();
 				NextCh();
 				End_Comment();
-				//flag_com = 1;
-
 			}
 			else
 				Symbol = leftparc;
@@ -653,7 +647,6 @@ void NextSym()
 			PrintSym();
 			NextCh();
 			End_Comment();
-			//flag_com = 1;
 			break;
 		case '}':
 			Symbol = frparc;
@@ -724,8 +717,6 @@ void main()
 {
 	setlocale(LC_ALL, "rus");
 	fopen_s(&file_program, "exampl.txt", "r");
-	fopen_s(&file_place_err, "exampl_err.txt", "r");
-	fopen_s(&file_rez_err, "example_rez_err.txt", "w");
 	fopen_s(&file_rezult_lex, "Rezult_Lex.txt", "w");
 	file_listing.open("listing.txt");
 	
@@ -746,8 +737,6 @@ void main()
 		file_listing << "\nКoмпиляция окончена: ошибок - " << ErrInx << "!" << endl;
 
 	fclose(file_program);
-	fclose(file_place_err);
-	fclose(file_rez_err);
 	fclose(file_rezult_lex);
 	file_listing.close();
 }

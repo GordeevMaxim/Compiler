@@ -55,4 +55,6 @@ void NameFunc();
 void CaseStatement();
 void IfStatement();
 void WhileStatement();
+void ForStatement();
+void RepeatStatement();
 //-----------------------------------------опнрнрхош тсмйжхи(йнмеж)---------------------------------------------//

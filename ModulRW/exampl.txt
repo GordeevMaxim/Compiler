@@ -1,19 +1,5 @@
 program af;
-begin {*)начало проги********}
-a-
+var a:integer;
+begin
+a:=1+2;
 end.
-:(:':::'
--5      -12456666666666666666666667
-   @ $ -455
-   ..
-   2147483647.0
-   2147483648.0
-   1.6e24
-dd  fhfhfhdgdgggfhfhppppppppppppppppppppppppppppppppppppppppfdffghhhhhhh rt; 
-. do for while
-*)-
-
-TRUE;
-
-FALSE;
-gfhgfh fg.

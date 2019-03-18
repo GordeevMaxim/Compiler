@@ -1,28 +1,157 @@
 ﻿#include "pch.h"
-#include "DECKEY.h"
-#include "DECW.h"
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <map>
-#include <vector>
-
-#define ErrMax 99						//максимальное  кол-во ошибок в программе
-#define ErrCount 334					//кол-во ошибок, для кт есть описания
-
-#define MAX_IDENT   12
-#define bad_Symbol 1000
-#define MAX_DL_IDENT 63
-#define maxint 2147483647
-#define MAX_DL_STRINGC 255
-#define maxreal 2147483647.0 
+#include "Parsing.h"
 
 using namespace std;
+/* Описание реализуемых в виде битовых строк множеств символов, 	*/
+/* стартовых для различных обрабатываемых конструкций:			*/
 
-struct key {
-	unsigned CodeKey;
-	char     NameKey[15];
-};
+unsigned
+
+	*idstarters,		/* множество из одного стартового символа ident */
+	*begpart,		/* стартовые символы функции block()		*/
+	*rpar,			/* правая скобка 				*/
+	*st_constpart,	/* стартовые символы функции constpart()	*/
+	*st_typepart,		/* стартовые символы функции typepart()		*/
+	*st_varpart,		/* стартовые символы функции varpart()		*/
+	*st_procfuncpart,	/* стартовые символы функции procfuncpart()	*/
+	*st_statpart,		/* стартовые символы функции statpart()		*/
+	*st_constant,	 	/* стартовые символы функции constant()		*/
+	*st_conaftersign,	/* стартовые символы конструкции константы, 	*/
+	/* идущей после знака + или -					*/
+	*st_typ,		/* стартовые символы функции typ()		*/
+	*st_typafterpack,	/* стартовые символы конструкции описания типа 	*/
+	/* после ключевого слова packedsy				*/
+	*st_simpletype,	/* стартовые символы функции simpletype()	*/
+	*st_fixpart,            /* стартовые символы функции fixpart()	и 	*/
+	/* функции reestrfields()					*/
+	*st_casefield,          /* стартовые символы функции casefield()	*/
+	*st_statement,          /* стартовые символы конструкции <оператор>     */
+	*st_startstatement,     /* стартовые символы оператора при нейтрализации*/
+	*st_variant,            /* стартовые символы конструкции <вариант> в    */
+		/* раздела компиляции выражений 				*/
+	*st_express,		/* ... выражения 				*/
+	*st_termfact;		/* ... слагаемого и множителя 			*/
+
+
+	/* Описание реализуемых в виде битовых строк множеств символов, 	*/
+	/* ожидаемых сразу после обработки различных конструкций:		*/
+
+unsigned
+
+	*blockfol,		/* ...после обработки блока основной программы  */
+	*af_1constant,		/* ...после анализа константы при вызове функ-	*/
+	/* ции constant() из функции constdeclaration(), а также после  */
+	/* анализа конструкции объявления переменных при вызове функции */
+	/* vardeclaration() из функции varpart()			*/
+	*af_2constant,		/* ...после анализа константы при вызове функ-	*/
+	/* ции constant() из функции casefield()			*/
+	*af_3const1,		/* ...после анализа первой константы отрезка	*/
+	/* при обработке оного в функции simpletype()			*/
+	*af_4const2,		/* ...после анализа второй константы отрезка	*/
+		/* при обработке оного в функции simpletype()			*/
+	*af_simpletype,		/* ...после анализа конструкции типа индекса во */
+		/* время обработки типа массива					*/
+	*af_1typ,		/* ...после анализа конструкции описания типа	*/
+		/* при вызове функции typ() из typedeclaration()		*/
+	*af_2typ,		/* ...после анализа конструкции описания типа	*/
+		/* при вызове функции typ() из fixpart()			*/
+	*af_1reestrfields,	/* ...после анализа конструкции списка полей 	*/
+		/* при вызове функции reestrfields() из функции complextype()	*/
+	*af_2reestrfields,	/* ...после анализа конструкции списка полей,	*/
+		/* вложенного внутри записи, т.е. при вызове reestrfields() из	*/
+		/* casefield()							*/
+	*af_fixpart,		/* ...после анализа фиксированной части списка 	*/
+		/* полей 							*/
+	*af_proclistparam,      /* ...после анализа списка параметров процедуры */
+	*af_funclistparam,      /* ...после анализа списка параметров функции   */
+	*af_blockprocfunc,      /* ...после анализа блока процедуры или функции */
+	*af_sameparam,          /* ...после анализа однотипных параметров       */
+	*af_factparam,          /* ...после анализа фактических параметров      */
+		/* процедур и функций                                           */
+	*af_oneparam,           /* ...после анализа параметра стандартных       */
+		/* процедур и функций, имеющих один параметр                    */
+	*af_writeparam,         /* ...после анализа параметра стандартных       */
+		/* процедур write и writeln                                     */
+
+	*af_assignment,         /* ...после анализа переменной в операторе      */
+		/* присваивания							*/
+	*af_compstatement,      /* ...после анализа оператора в составном оп-ре */
+	*af_iftrue,             /* ...после анализа условного выражения в опера-*/
+		/*торе if							*/
+	*af_iffalse,            /* ...после анализа оператора ветви "истина" в  */
+		/* операторе if							*/
+	*af_whilefor,		/* ...после анализа условного выражения в опера-*/
+		/* торе while и выражения-второй границы изменения параметра    */
+		/* цикла в операторе for					*/
+	*af_repeat,             /* ...после анализа оператора в теле цикла repeat*/
+	*af_with,               /* ...после анализа  переменной  в   заголовке  */
+		/* оператора with						*/
+	*af_case1,              /* ...после анализа выбирающего выражения в case*/
+	*af_case2,              /* ...после анализа варианта в операторе case   */
+	*af_forassign,	        /* ...после анализа переменной в операторе for	*/
+	*af_for1, 		/* ...после анализа выражения-первой границы из-*/
+		/* менения параметра цикла в операторе for			*/
+	*af_ident,		/* ...после идентификатора в "переменной"	*/
+	*af_index,		/* ...после индекса при разборе массива		*/
+	*af_set1,		/* ...после 1-го выражения в конструкторе множ. */
+	*af_label,              /* ...после анализа метки в конструкции описания*/
+	*af_label1,             /* ... после анализа конструкции описания меток */
+	*af_goto;               /* ...после goto                                */
+
+	/* Описание реализуемых в виде битовых строк множеств допустимых симво- */
+	/* лов операций в разделе компиляции выражений 				*/
+
+unsigned
+
+	*op_rel,		/* операции отношения над простыми выражениями	*/
+	*op_add,		/* аддитивные операции над слагаемыми		*/
+	*op_mult;		/* мультипликативные операции над множителями	*/
+
+/* Описание реализуемых в виде битовых строк множеств способов исполь-	*/
+/* зования идентификаторов:						*/
+
+unsigned
+
+	*set_VARCONFUNCS,	/* доп. способы использования - VARS, CONSTS, FUNCS */
+	*set_VARS,	/* допустимый способ использования - VARS		*/
+	*set_TYPES, 	/* допустимый способ использования - TYPES 		*/
+	*set_CONSTS,	/* допустимый способ использования - CONSTS 		*/
+	*set_TYCON,     /* допустимые способы использования - TYPES,CONSTS	*/
+	*set_FUNCS,     /* допустимый способ использования - FUNCS              */
+	*set_PROCS,     /* допустимый способ использования - PROCS              */
+	*set_FUNPR,     /* допустимые способы использования - FUNCS,PROCS       */
+	*set_VARFUNPR;  /* допустимые способы использования - VARS,FUNCS,PROCS  */
+
+/* Описание реализуемого в виде битовой строки множества кодов типов,	*/
+/* недопустимых для использования в том или ином контексте:		*/
+
+unsigned *illegalcodes;
+vector <ErrorTable> ErrTable(ErrMax);	// таблица ошибок из  файла с ошибками
+
+unsigned i = 0,							// счётчик
+ErrorOverflow = false,			// 
+ErrInx = 0,						// счётчик ошибок
+LastInLine;						// длина текущей строки
+unsigned Symbol;						//код символа
+char ch = '-';							// текущая литера
+char line[90] = "";						// текущая строка
+char **MsgErr = new char *[ErrCount];	//массив сообщений об ошибках
+int flag;
+bool err_203;
+char name[80];							//лексема
+int lname;								//длина лексемы
+unsigned len_c;							//длина строковой констатнты
+int nextDigit;							//распознаная цифра
+long int intConstant;						//целая константа
+int intE;								//показатель вещественного числа
+double realConstant;					//вещественная константа
+bool boolConstant;						//логическая константа
+float mn;
+FILE *file_program, 					// файл с текстом программы
+*file_rezult_lex;					// файл результата работы лексического анализатора
+ofstream file_listing;					// файл листинга программы
+
+
 map <string, unsigned> KeyWords =
 /* таблица ключевых слов и их кодов 		*/
 {
@@ -41,7 +170,6 @@ map <string, unsigned> KeyWords =
 	{ "not", notsy},
 	{ "set", setsy},
 	{ "var", varsy},
-	//{ TRUE, "TRUE"},
 	{ "case", casesy},
 	{ "else", elsesy},
 	{ "file", filesy},
@@ -52,7 +180,6 @@ map <string, unsigned> KeyWords =
 	{ "unit", unitsy},
 	{ "uses", usessy},
 	{ "with", withsy},
-	//{ FALSE, "FALSE" },
 	{ "array", arraysy},
 	{ "begin", beginsy},
 	{ "const", constsy},
@@ -80,45 +207,8 @@ map <string, unsigned> KeyWords =
 	{ "implementation", implementationsy},
 };
 
-struct textposition
-{
-	unsigned linenumber = 0;				//номер строки
-	unsigned charnumber = 0;				//номер позиции в строке
-};
-
 textposition token;
 textposition positionnow;
-
-struct ErrorTable
-{
-	textposition ErrPos;
-	unsigned ErrCode;
-};
-
-vector <ErrorTable> ErrTable(ErrMax);	// таблица ошибок из  файла с ошибками
-
-unsigned i = 0,							// счётчик
-		ErrorOverflow = false,			// 
-		ErrInx = 0,						// счётчик ошибок
-		LastInLine;						// длина текущей строки
-char ch = '-';							// текущая литера
-char line[90] = "";						// текущая строка
-char **MsgErr = new char *[ErrCount];	//массив сообщений об ошибках
-int flag;
-bool err_203;
-char name[80];							//лексема
-int lname;								//длина лексемы
-unsigned Symbol,						//код символа
-		 len_c;							//длина строковой констатнты
-int nextDigit;							//распознаная цифра
-long int intConstant;						//целая константа
-int intE;								//показатель вещественного числа
-double realConstant;					//вещественная константа
-bool boolConstant;						//логическая константа
-float mn;
-FILE *file_program, 					// файл с текстом программы
-	 *file_rezult_lex;					// файл результата работы лексического анализатора
-ofstream file_listing;					// файл листинга программы
 
 /*функция заполнения такблицы описаний ошибок*/
 void MSGERR()
@@ -483,6 +573,11 @@ void NextSym()
 	flag = 0;
 	while (ch == ' ')
 		NextCh();
+	if (ch == '\n')
+	{
+		NextCh(); NextCh();
+		fprintf(file_rezult_lex, "\n");
+	}
 	token.linenumber = positionnow.linenumber;
 	token.charnumber = positionnow.charnumber;
 
@@ -492,7 +587,6 @@ void NextSym()
 			DetermineTheNumber(1);
 			break;
 		case 2:
-			//ch = ch_first;
 			lname = 0;
 			while (((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || (ch == '_')) && lname < MAX_DL_IDENT)
 			{
@@ -523,7 +617,6 @@ void NextSym()
 			else
 			{
 				Symbol = ident;
-				//PrintErrorSym(76, token);
 				while (ch != ' ')
 					NextCh();
 			}
@@ -678,13 +771,6 @@ void NextSym()
 			Symbol = arrowc;
 			NextCh();
 			break;
-		//case '"':
-		//	while (ch != '"' && ch != EOF)
-		//	{
-		//		NextCh();
-		//	}
-		//	Symbol = stringc;
-		//	break;
 		default: switch (ch)
 		{
 			case '\n':
@@ -694,7 +780,7 @@ void NextSym()
 				}
 				else
 					NextCh();
-				fprintf(file_rezult_lex, "\n");
+				//fprintf(file_rezult_lex, "\n");
 				flag = 1;
 				break;
 			case 0:
@@ -712,10 +798,308 @@ void NextSym()
 		PrintSym();
 
 }
+/*---------------------------- B E L O N G -----------------------------*/
+/*	Функция belong. Осуществляет поиск указанного элемента в множестве.
+	Возвращает истину в случае наличия элемента, иначе ложь.
+*/
+bool Belong(unsigned element, unsigned *set)	/* номер элемента, который ищем, множество, в котором ищем элемент */
+{
+	unsigned WordNumber,						/* номер слова строки, в к-м может быть элемент */
+	BitNumber;									/* номер бита, соответствующего элементу */
+	WordNumber = element / WORDLENGTH;
+	BitNumber = element % WORDLENGTH;
+	return(set[WordNumber] & (1 << (WORDLENGTH - 1 - BitNumber)));
+}
+/*----------------------------- A C C E P T ----------------------------*/
+void Accept(unsigned symbolexpected)	/* код ожидаемого символа*/
+{
+	if (Symbol == symbolexpected) NextSym();
+	else
+	{
+		Error(symbolexpected, token.linenumber, token.charnumber);
+		//fprintf(t, " Обнаружена ошибка %d (%d)", symbolexpected, Symbol);
+	}
+}
+/*-------------------- C O N V E R T _ T O _ B I T S -------------------*/
+unsigned *Convert_To_Bits(unsigned *intstr)
+				/* переводит одномерный массив с базо-	*/
+				/* вым типом 0..127 в 128-битовую строку, со-	*/
+				/* стояние каждого бита в которой отражает от-	*/
+				/* сутствие или наличие в исходном массиве эле-	*/
+				/* мента, численно равного номеру этого бита	*/
+					/* используется для представления в	*/
+				/* виде битовых строк стартовых символов раз-	*/
+				/* личных языковых конструкций паскаля, симво-	*/
+				/* лов, ожидаемых сразу после обработки тех или */
+				/* иных конструкций, а также множеств допусти-	*/
+				/* мых способов использования идентификатора и 	*/
+				/* прочих неблаговидных вещей			*/
+					/* аргумент - адрес массива, под-	*/
+				/* лежащего конвертированию			*/
+				/* ( на "Эльбрусе" - intstr[4] )		*/
+					/* возвращает адрес другого массива, -	*/
+				/* массива целых чисел с суммарной длиной эле-	*/
+				/* ментов в 128 бит, который и именуем 128-би-	*/
+				/* товой строкой				*/
+{
+	unsigned     
+		*set,
+		*str,		/* вспомогательный указатель на исходный массив */
+		wordnum,	/* номер слова - составляющего битовой строки	*/
+		bitnum;		/* номер бита в слове, содержащемся в строке	*/
+
+	str = intstr;
+	set = (unsigned*)calloc(8, sizeof(unsigned));
+	while (*str != eolint)	/* пока не начался...			*/
+	{
+		wordnum = *str / WORDLENGTH;	/* вычисление номера слова, в котором находится бит с номером *str			*/
+		bitnum = *str % WORDLENGTH;	/* вычисление номера бита в	*/
+			/* слове, в котором он находится			*/
+		set[wordnum] |= (1 << (WORDLENGTH - 1 - bitnum));
+		str++;
+	}
+	return((unsigned*)set);
+}
+/*----------------------- S e t D i s j u n c t ------------------------*/
+/*	Функция SetDisjunct. Осуществляет дизъюнкцию множеств set1 и set2. Результатом становится множество set3.*/
+void SetDisjunct(unsigned set1[], unsigned set2[], unsigned set3[])
+{
+	unsigned i;	/* параметр цикла */
+	for (i = 0; i < SET_SIZE; ++i) set3[i] = set1[i] | set2[i];
+}
+/*---------------------------- S K I P T O 1 ---------------------------*/
+/* пропуск символов, пока не встречен символ, принадлежащий данному множеству*/
+void		 Skipto1(unsigned *set)/* указатель на данное 	*/
+{
+	while ((!Belong(Symbol, set)) && (Symbol != endoffile)) NextSym();
+}
+/*---------------------------- S K I P T O 2 ---------------------------*/
+/* пропуск символов, пока не встречен символ, принадлежащий одному из данных множеств 		        */
+void		 Skipto2(unsigned *set1, unsigned *set2)
+{
+	while ((!Belong(Symbol, set1)) && (!Belong(Symbol, set2)) && (Symbol != endoffile))
+		NextSym();
+}
+
+
 
 void main()
 {
 	setlocale(LC_ALL, "rus");
+
+/* Множества КОДОВ символов, стартовых для различных обрабатываемых 	*/
+/* конструкций:								*/
+
+	unsigned
+
+		codes_idstart[] = { ident,eolint },	/* стартовые символы некоторых 	*/
+				/* обрабатываемых конструкций 				*/
+		codes_block[] = { labelsy,constsy,typesy,varsy,functionsy,
+			proceduresy,beginsy,eolint },	/* стартовые символы разделов	*/
+				/* описаний и раздела операторов			*/
+		codes_rightpar[] = { rightparc,eolint },
+		/* правая скобка 					*/
+		codes_constant[] = { plusc,minusc,charc,stringc,ident,integerc,realc,
+			eolint },	/* стартовые символы конструкции constant       */
+		codes_typ[] = { packedsy,arrowc,arraysy,filesy,setsy,recordsy,
+			plusc,minusc,ident,leftparc,integerc,charc,stringc,eolint },
+		/* стартовые символы конструкции описания типа;	*/
+	/* {plus,minus,ident,leftpar,intc,charc,stringc,eolint}-*/
+	/* стартовые символы конструкции описания простого типа */
+		codes_fixpart[] = { ident,semicolonc,casesy,endsy,eolint },
+		/* стартовые символы конструкции списка полей и кон-	*/
+		/* струкции фиксированной части	записи			*/
+		codes_casefield[] = { realc,endsy,semicolonc,plusc,minusc,charc,
+			stringc,ident,integerc,eolint },
+		/* стартовые символы конструкции варианта       	*/
+		codes_statement[] = { integerc,endsy,elsesy,untilsy,ident,beginsy,ifsy,
+			whilesy,repeatsy,forsy,casesy,withsy,semicolonc,gotosy,eolint },
+		/* стартовые символы конструкции <оператор>             */
+		/* (при нейтрализации ошибок используются символы:      */
+		/* {beginsy,ifsy,whilesy,repeatsy,forsy,casesy,withsy,  */
+		/* semicolon,gotosy,eolint} )                           */
+		codes_express[] = { plusc, minusc, leftparc, lbracketc, notsy, ident,
+			integerc, realc, charc, stringc, nilsy, eolint },
+		/* стартовые символы выражения и простого выражения 	*/
+		codes_termfact[] = { ident, leftparc, lbracketc, notsy, integerc, realc,
+			charc, stringc, nilsy, eolint };
+	/* стартовые символы слагаемого и множителя 		*/
+
+
+/* Множества кодов символов, ожидаемых после обработки различных кон-	*/
+/* струкций:								*/
+
+	unsigned
+
+		acodes_block[] = { pointc,endoffile,eolint },	/* сим-	*/
+				/* волы, следующие за конструкцией блока в основной 	*/
+				/* программе			 			*/
+		acodes_simpletype[] = { commac,rbracketc,eolint }, 	/* сим- */
+				/* волы, ожидаемые сразу после вызова simpletype() во 	*/
+				/* время анализа типа "массив" 				*/
+		acodes_fixpart[] = { casesy,rightparc,endsy,eolint },	/* символы, 	*/
+				/* ожидаемые сразу после анализа конструкции fixpart;	*/
+				/* {rightpar,endsy,eolint} - символы, ожидаемые сразу 	*/
+				/* после анализа списка полей при вызове reestrfields() */
+				/* из casefield() ( а при вызове из complextype() ожи-	*/
+				/* даемый символ только endsy )				*/
+		acodes_typ[] = { endsy,rightparc,semicolonc,eolint },	/* сим-	*/
+				/* волы, ожидаемые сразу после анализа конструкции typ 	*/
+				/* при вызове функции typ() из fixpart()		*/
+		acodes_2constant[] = { commac,colonc,eolint }, 	/* символы, ожидаемые 	*/
+				/* сразу после анализа константы при вызове constant()	*/
+				/* из casefield() и variant()				*/
+		acodes_3const[] = { twopointsc,commac,rbracketc,eolint },	/* коды */
+				/* символов, ожидаемых сразу после анализа константы 	*/
+		acodes_listparam[] = { colonc,semicolonc,forwardsy,constsy,varsy,eolint },
+		/* символы, ожидаемые сразу после списка параметров     */
+		/* ( символы functionsy,proceduresy,beginsy уже есть в  */
+		/*   followers)                                         */
+		acodes_factparam[] = { commac,rightparc,eolint },
+		/* символы, ожидаемые сразу после разбора фактических   */
+		/* параметров процедур и функций                        */
+		acodes_assign[] = { assignc,eolint },
+		/* символ, ожидаемый сразу после переменной в операторе */
+		/* присваивания и в операторе for                       */
+		acodes_compcase[] = { semicolonc,endsy,eolint },
+		/* символы, ожидаемые сразу после оператора в составном */
+		/* операторе и после варианта в операторе варианта      */
+		acodes_iftrue[] = { thensy,eolint },
+		/* символ, ожидаемый сразу после условного выражения в  */
+		/* операторе if						*/
+		acodes_iffalse[] = { elsesy,eolint },
+		/*символ, ожидаемый сразу после оператора ветви "истина"*/
+		/* в операторе if					*/
+		acodes_wiwifor[] = { commac,dosy,eolint },
+		/* символы, ожидаемые сразу после переменной в заголовке*/
+		/* оператора with;  { dosy,eolint} - символ, ожидаемый  */
+		/* сразу после условного выражения в операторе while и  */
+		/* сразу после выражения-второй границы изменения пара- */
+		/* метра цикла в операторе for				*/
+		acodes_repeat[] = { untilsy, semicolonc, eolint },
+		/* cимволs, ожидаемые сразу после оператора в теле      */
+		/* оператора repeat					*/
+		acodes_case1[] = { ofsy,eolint },
+		/* символ, ожидаемый сразу после выбирающего выражения  */
+		/* в операторе case					*/
+		acodes_for1[] = { tosy,downtosy,eolint },
+		/* символы, ожидаемые сразу после выражения-первой гра- */
+		/* ницы изменения пераметра цикла в операторе for       */
+		acodes_ident[] = { lbracketc, arrowc, pointc, eolint },
+		/* ... после идентификатора в переменной 		*/
+		acodes_index[] = { rbracketc, commac, eolint },
+		/* ... после индексного выражения при разборе массива	*/
+		acodes_set1[] = { rbracketc, twopointsc, commac, eolint };
+	/* ... после 1-го выражения в конструкторе множества 	*/
+
+/* Множества кодов операций в разделе компиляции выражений: 		*/
+
+	unsigned
+
+		codes_rel[] = { laterc, laterequalc, greaterc, greaterequalc,
+			equalc, latergreaterc, insy, eolint },
+		/* операции отношения 					*/
+		codes_add[] = { plusc, minusc, orsy, eolint },
+		/* аддитивные операции 					*/
+		codes_mult[] = { starc, slashc, divsy, modsy, andsy, eolint };
+	/* мультипликативные операции				*/
+
+/* Множества кодов допустимых способов использования идентификаторов:	*/
+
+	unsigned
+
+		codes_VARCONFUNCS[] = { VARS,FUNCS,CONSTS,eolint },
+		codes_VARS[] = { VARS,eolint },
+		codes_CONSTS[] = { CONSTS,eolint },
+		codes_TYPES[] = { TYPES,eolint },
+		codes_TYCON[] = { TYPES,CONSTS,eolint },
+		codes_FUNCS[] = { FUNCS,eolint },
+		codes_VARFUNPR[] = { VARS,FUNCS,PROCS,eolint };
+
+
+
+	/* Множества кодов типов, недопустимых для использования в том или ином */
+	/* контексте:								*/
+
+	unsigned codes_illegal[] = { REFERENCES,RECORDS,SETS,FILES,ARRAYS,eolint };
+
+
+	illegalcodes = Convert_To_Bits(codes_illegal);
+	idstarters = Convert_To_Bits(codes_idstart);
+	begpart = Convert_To_Bits(codes_block);
+	st_constpart = Convert_To_Bits(codes_block + 1);
+	st_typepart = Convert_To_Bits(codes_block + 2);
+	st_varpart = Convert_To_Bits(codes_block + 3);
+	st_procfuncpart = Convert_To_Bits(codes_block + 4);
+	st_statpart = Convert_To_Bits(codes_block + 6);
+	st_constant = Convert_To_Bits(codes_constant);
+	st_conaftersign = Convert_To_Bits(codes_constant + 4);
+	st_typ = Convert_To_Bits(codes_typ);
+	st_typafterpack = Convert_To_Bits(codes_typ + 1);
+	st_simpletype = Convert_To_Bits(codes_typ + 6);
+	st_fixpart = Convert_To_Bits(codes_fixpart);
+	st_casefield = Convert_To_Bits(codes_casefield + 1);
+	st_startstatement = Convert_To_Bits(codes_statement + 5);
+	st_statement = Convert_To_Bits(codes_statement);
+	st_variant = Convert_To_Bits(codes_casefield);
+
+	st_express = Convert_To_Bits(codes_express);
+	st_termfact = Convert_To_Bits(codes_termfact);
+
+	blockfol = Convert_To_Bits(acodes_block);
+	rpar = Convert_To_Bits(codes_rightpar);
+	af_1constant = Convert_To_Bits(acodes_typ + 2);
+	af_2constant = Convert_To_Bits(acodes_2constant);
+	af_3const1 = Convert_To_Bits(acodes_3const);
+	af_4const2 = Convert_To_Bits(acodes_3const + 1);
+	af_simpletype = Convert_To_Bits(acodes_simpletype);
+	af_1typ = Convert_To_Bits(acodes_typ + 1);
+	af_2typ = Convert_To_Bits(acodes_typ);
+	af_1reestrfields = Convert_To_Bits(acodes_fixpart + 2);
+	af_2reestrfields = Convert_To_Bits(acodes_fixpart + 1);
+	af_fixpart = Convert_To_Bits(acodes_fixpart);
+	af_funclistparam = Convert_To_Bits(acodes_listparam);
+	af_proclistparam = Convert_To_Bits(acodes_listparam + 1);
+	af_blockprocfunc = Convert_To_Bits(acodes_typ + 2);
+	af_sameparam = Convert_To_Bits(acodes_typ + 1);
+	af_factparam = Convert_To_Bits(acodes_factparam);
+	af_oneparam = Convert_To_Bits(acodes_factparam + 1);
+	af_writeparam = Convert_To_Bits(acodes_2constant + 1);
+
+	af_assignment = Convert_To_Bits(acodes_assign);
+	af_compstatement = Convert_To_Bits(acodes_compcase);
+	af_iftrue = Convert_To_Bits(acodes_iftrue);
+	af_iffalse = Convert_To_Bits(acodes_iffalse);
+	af_whilefor = Convert_To_Bits(acodes_wiwifor + 1);
+	af_repeat = Convert_To_Bits(acodes_repeat);
+	af_with = Convert_To_Bits(acodes_wiwifor);
+	af_case1 = Convert_To_Bits(acodes_case1);
+	af_case2 = Convert_To_Bits(acodes_compcase);
+	af_for1 = Convert_To_Bits(acodes_for1);
+	af_forassign = Convert_To_Bits(acodes_assign);
+
+	af_set1 = Convert_To_Bits(acodes_set1);
+	af_ident = Convert_To_Bits(acodes_ident);
+	af_index = Convert_To_Bits(acodes_index);
+	af_goto = Convert_To_Bits(codes_casefield + 9);
+	af_label = Convert_To_Bits(acodes_index + 1);
+	af_label1 = Convert_To_Bits(codes_block + 1);
+
+	op_rel = Convert_To_Bits(codes_rel);
+	op_add = Convert_To_Bits(codes_add);
+	op_mult = Convert_To_Bits(codes_mult);
+
+	set_VARCONFUNCS = Convert_To_Bits(codes_VARCONFUNCS);
+	set_VARS = Convert_To_Bits(codes_VARS);
+	set_TYPES = Convert_To_Bits(codes_TYPES);
+	set_CONSTS = Convert_To_Bits(codes_CONSTS);
+	set_TYCON = Convert_To_Bits(codes_TYCON);
+	set_FUNCS = Convert_To_Bits(codes_FUNCS);
+	set_FUNPR = Convert_To_Bits(codes_VARFUNPR + 1);
+	set_PROCS = Convert_To_Bits(codes_VARFUNPR + 2);
+	set_VARFUNPR = Convert_To_Bits(codes_VARFUNPR);
+
+
 	fopen_s(&file_program, "exampl.txt", "r");
 	fopen_s(&file_rezult_lex, "Rezult_Lex.txt", "w");
 	file_listing.open("listing.txt");
@@ -727,10 +1111,8 @@ void main()
 	file_listing << "                   Листинг программы\n";
 	ReadNextLine();
 	ch = line[0];
-	while ((token.charnumber != LastInLine) || !feof(file_program))
-	{
-		NextSym();
-	}
+	NextSym();
+	Programme();
 	if (ErrorOverflow)
 		file_listing << "\nКoмпиляция окончена: ошибок > " << ErrInx << "!" << endl;
 	else

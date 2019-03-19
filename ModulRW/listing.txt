@@ -1,7 +1,14 @@
              Работает Pascal - компилятор
                    Листинг программы
    1  program af;
-   2  var a:integer;
+   2  var n,k: integer;
    3  begin
+   4  x:=ReadInteger;
+   5  if x=k then
+   6  begin
+   7  Exists := true;
+   8  end;
+   9  if Exists then k else k;
+  10  end.
 
-Кoмпиляция окончена: ошибок - 2!
+Кoмпиляция окончена: ошибок - 0!

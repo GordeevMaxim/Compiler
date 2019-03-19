@@ -398,7 +398,7 @@ void Error(unsigned errorcode, unsigned number_str, unsigned number_pos)
 		ErrInx++;
 	}
 }
-/*функция чтения ошибок из файла с ошибками*/
+/*функция зануления таблицы ошибок*/
 void ReadErrors()
 {
 	/*зануляем значения*/

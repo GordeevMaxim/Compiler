@@ -1,5 +1,10 @@
 program af;
-var a:integer;
+var n,k: integer;
 begin
-a:=1+2;
+x:=ReadInteger;
+if x=k then
+begin
+Exists := true;
+end;
+if Exists then k else k;
 end.

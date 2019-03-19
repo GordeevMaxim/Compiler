@@ -28,8 +28,7 @@ void ConstPart()
 	if (Symbol == constsy)
 	{
 		NextSym();
-		do
-		{
+		do {
 			One_Const();
 			Accept(semicolonc);
 		} while (Symbol == ident);
@@ -101,8 +100,7 @@ void TypePart()
 	if (Symbol == typesy)
 	{
 		NextSym();
-		do
-		{
+		do {
 			One_Type();
 			Accept(semicolonc);
 		} while (Symbol == ident);
@@ -229,8 +227,7 @@ void VarPart()
 	if (Symbol == varsy)
 	{
 		Accept(varsy);
-		do
-		{
+		do {
 			VarDeclaration();
 			Accept(semicolonc);
 		} while (Symbol == ident);
@@ -360,6 +357,11 @@ void FormalParameters()
 void Expression()
 {
 	SimpleExpression();
+	if (Symbol == equalc || Symbol == laterc || Symbol == greaterc || Symbol == latergreaterc || Symbol == laterequalc || Symbol == greaterequalc)
+	{
+		NextSym();
+		SimpleExpression();
+	}
 }
 /* Анализ конструкции "простое выражение" */
 void SimpleExpression()
@@ -367,16 +369,24 @@ void SimpleExpression()
 	if (Symbol == plusc || Symbol == minusc)
 		NextSym();
 	Term();
+	while (Symbol == plusc || Symbol == minusc || Symbol == orsy)
+	{
+		NextSym();
+		Term();
+	}
 }
 /* Анализ конструкции "слагаемое" */
 void Term()
 {
 	Factor();
-	NextSym();
+	while (Symbol == plusc || Symbol == minusc || Symbol == divsy || Symbol == modsy || Symbol == starc || Symbol == slashc)
+	{
+		NextSym();
+		Factor();
+	}
 }
 /* Анализ конструкции "множитель" */
 void Factor()
-//
 {
 	switch (Symbol)
 	{
@@ -405,30 +415,6 @@ void Factor()
 		break;
 	}
 }
-/* Анализ конструкции "переменная" */
-void Variable()
-{
-	switch (Symbol)
-	{
-	case lbracketc:
-		NextSym();
-		Expression();
-		while (Symbol == commac)
-		{
-			NextSym();
-			Expression();
-		}
-		Accept(rbracketc);
-		break;
-	case pointc:
-		NextSym();
-		Accept(ident);
-		break;
-	case arrowc:
-		NextSym();
-		break;
-	}
-}
 /* Анализ конструкции фактические параметры функции ( и процедуры) */
 void NameFunc()
 {
@@ -439,8 +425,9 @@ void NameFunc()
 }
 //---------------------------------------ВЫРАЖЕНИЕ ( КОНЕЦ )----------------------------------------------------//
 
-//-----------------------------------------ОПИСАНИЕ ОПЕРАТОРОВ (НАЧАЛО)-----------------------------------------//
 
+
+//-----------------------------------------ОПИСАНИЕ ОПЕРАТОРОВ (НАЧАЛО)-----------------------------------------//
 /*Анализ конструкции "оператор"*/
 void Statement()
 {
@@ -452,11 +439,14 @@ void Statement()
 		break;
 	case repeatsy:
 		//Анализ конструкции "цикл с постусловием"
+		RepeatStatement();
 		break;
 	case forsy:
 		//Анализ конструкции "цикл с параметром"
+		ForStatement();
 		break;
 	case ifsy:
+		//Анализ конструкции "условный оператор"
 		IfStatement();
 		break;
 	case casesy:
@@ -468,6 +458,17 @@ void Statement()
 	case semicolonc:
 		Accept(semicolonc);
 		break;
+	case ident:
+		Accept(ident);
+		if (Symbol == leftparc)
+		{
+			CallProc();
+			Accept(rightparc);
+		}
+		else
+			if (Symbol == assignc)
+				GivingStatement();
+			break;
 	case endsy:		break;
 	}
 }
@@ -482,12 +483,11 @@ void AssignStatement()
 void BeginStatement()
  {
 	 Accept(beginsy);
-	 Statement();
-	 while (Symbol == semicolonc) {
-		 Accept(semicolonc);
-		 Statement();
-	 }
-	 Accept(semicolonc);
+	 do  {
+		 if (Symbol == semicolonc) Accept(semicolonc);
+		 Statement();		 
+	 } while (Symbol == semicolonc);
+	 Accept(endsy);
  }
 /* Анализ конструкции "цикл с предусловием" */
 void WhileStatement()
@@ -522,7 +522,43 @@ void CaseStatement()
 	}
 	Accept(endsy);
 }
-
+/* Анализ конструкции "цикл с постусловием" */
+void RepeatStatement()
+{
+	Accept(repeatsy);
+	Statement();
+	while (Symbol == semicolonc)
+	{
+		NextSym();
+		Statement();
+	}
+	Accept(untilsy);
+	Expression();
+}
+/* Анализ конструкции "цикл с параметром" */
+void ForStatement()
+{
+	Accept(forsy);
+	Accept(ident);
+	Accept(assignc);
+	Expression();
+	if (Symbol == tosy || Symbol == downtosy)
+		NextSym();
+	Expression();
+	Accept(dosy);
+	Statement();
+}
+/* Инициализация анализа выражения */
+void GivingStatement()
+{
+	Accept(assignc);
+	Expression();
+}
+/*Инициализация анализа процедуры*/
+void CallProc()
+{
+	NameFunc();
+}
 //-----------------------------------------ОПИСАНИЕ ОПЕРАТОРОВ (КОНЕЦ)-----------------------------------------//
 
 

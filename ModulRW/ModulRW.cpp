@@ -6,7 +6,14 @@ using namespace std;
 /* стартовых для различных обрабатываемых конструкций:			*/
 
 unsigned
-
+	*st_all, /*содержит programsy*/
+	*comp_stat,
+	*m_scolon,
+	*af_headfunproc,
+	*m_twopoint,
+	*m_colon,
+	*m_fpar,
+	*m_comma,
 	*idstarters,		/* множество из одного стартового символа ident */
 	*begpart,		/* стартовые символы функции block()		*/
 	*rpar,			/* правая скобка 				*/
@@ -386,15 +393,15 @@ void ReadNextLine()
 	}
 }
 /*функция добавления ошибки в таблицу ошибок*/
-void Error(unsigned errorcode, unsigned number_str, unsigned number_pos)
+void Error(unsigned errorcode, textposition now)
 {
 	if (ErrInx == ErrMax)
 		ErrorOverflow = true;
 	else
 	{
-		ErrTable[ErrInx].ErrCode = errorcode;
-		ErrTable[ErrInx].ErrPos.charnumber = number_pos+1;
-		ErrTable[ErrInx].ErrPos.linenumber = number_str;
+		ErrTable[ErrInx].ErrCode = errorcode;		
+		ErrTable[ErrInx].ErrPos.charnumber = now.charnumber +1;
+		ErrTable[ErrInx].ErrPos.linenumber = now.linenumber;
 		ErrInx++;
 	}
 }
@@ -418,7 +425,7 @@ void PrintSym()
 /*функция печати синтаксической ошибки в файл с ошибками*/
 void PrintErrorSym(unsigned errorcode, textposition position)
 {
-	Error(errorcode, position.linenumber, position.charnumber);
+	Error(errorcode, position);
 }
 /*функция чтения очередной литеры строки*/
 char NextCh()
@@ -571,12 +578,14 @@ void NextSym()
 	int lname;
 
 	flag = 0;
-	while (ch == ' ')
+	while (ch == ' ' || ch == '\t')
 		NextCh();
 	if (ch == '\n')
 	{
 		NextCh(); NextCh();
 		fprintf(file_rezult_lex, "\n");
+		while (ch == ' ' || ch == '\t')
+			NextCh();
 	}
 	token.linenumber = positionnow.linenumber;
 	token.charnumber = positionnow.charnumber;
@@ -590,7 +599,7 @@ void NextSym()
 			lname = 0;
 			while (((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || (ch == '_')) && lname < MAX_DL_IDENT)
 			{
-				name[lname++] = ch;
+				name[lname++] = tolower(ch);
 				NextCh();
 			}
 			name[lname] = '\0';
@@ -694,11 +703,7 @@ void NextSym()
 			NextCh();
 			break;
 		case '-':
-			//if (NextCh() >= '0' && ch <= '9')
-				//DetermineTheNumber(-1);
-			//else {
-				Symbol = minusc;
-			//}
+			Symbol = minusc;
 			NextCh();
 			break;
 		case '/':
@@ -800,8 +805,7 @@ void NextSym()
 }
 /*---------------------------- B E L O N G -----------------------------*/
 /*	Функция belong. Осуществляет поиск указанного элемента в множестве.
-	Возвращает истину в случае наличия элемента, иначе ложь.
-*/
+	Возвращает истину в случае наличия элемента, иначе ложь. */
 bool Belong(unsigned element, unsigned *set)	/* номер элемента, который ищем, множество, в котором ищем элемент */
 {
 	unsigned WordNumber,						/* номер слова строки, в к-м может быть элемент */
@@ -816,8 +820,7 @@ void Accept(unsigned symbolexpected)	/* код ожидаемого символ
 	if (Symbol == symbolexpected) NextSym();
 	else
 	{
-		Error(symbolexpected, token.linenumber, token.charnumber);
-		//fprintf(t, " Обнаружена ошибка %d (%d)", symbolexpected, Symbol);
+		Error(symbolexpected, token);
 	}
 }
 /*-------------------- C O N V E R T _ T O _ B I T S -------------------*/
@@ -869,13 +872,13 @@ void SetDisjunct(unsigned set1[], unsigned set2[], unsigned set3[])
 }
 /*---------------------------- S K I P T O 1 ---------------------------*/
 /* пропуск символов, пока не встречен символ, принадлежащий данному множеству*/
-void		 Skipto1(unsigned *set)/* указатель на данное 	*/
+void Skipto1(unsigned *set)/* указатель на данное 	*/
 {
 	while ((!Belong(Symbol, set)) && (Symbol != endoffile)) NextSym();
 }
 /*---------------------------- S K I P T O 2 ---------------------------*/
 /* пропуск символов, пока не встречен символ, принадлежащий одному из данных множеств 		        */
-void		 Skipto2(unsigned *set1, unsigned *set2)
+void Skipto2(unsigned *set1, unsigned *set2)
 {
 	while ((!Belong(Symbol, set1)) && (!Belong(Symbol, set2)) && (Symbol != endoffile))
 		NextSym();
@@ -887,11 +890,11 @@ void main()
 {
 	setlocale(LC_ALL, "rus");
 
-/* Множества КОДОВ символов, стартовых для различных обрабатываемых 	*/
-/* конструкций:								*/
+	/* Множества КОДОВ символов, стартовых для различных обрабатываемых 	*/
+	/* конструкций:								*/
 
 	unsigned
-
+		codes_st_all[] = { programsy,eolint },
 		codes_idstart[] = { ident,eolint },	/* стартовые символы некоторых 	*/
 				/* обрабатываемых конструкций 				*/
 		codes_block[] = { labelsy,constsy,typesy,varsy,functionsy,
@@ -1014,15 +1017,27 @@ void main()
 		codes_TYPES[] = { TYPES,eolint },
 		codes_TYCON[] = { TYPES,CONSTS,eolint },
 		codes_FUNCS[] = { FUNCS,eolint },
-		codes_VARFUNPR[] = { VARS,FUNCS,PROCS,eolint };
-
-
+		codes_VARFUNPR[] = { VARS,FUNCS,PROCS,eolint },
+		twpoint_m[] = { twopointsc,eolint },
+		colon_m[] = { colonc,eolint },
+		f_param[] = { varsy,functionsy,proceduresy,ident,eolint },
+		af_head[] = { varsy,constsy,labelsy,typesy,beginsy,pointc,semicolonc,endoffile,eolint },
+		comma_m[] = { commac,eolint },
+		semcol_m[] = { semicolonc,eolint };
 
 	/* Множества кодов типов, недопустимых для использования в том или ином */
 	/* контексте:								*/
 
 	unsigned codes_illegal[] = { REFERENCES,RECORDS,SETS,FILES,ARRAYS,eolint };
 
+	st_all = Convert_To_Bits(codes_st_all),
+	comp_stat = Convert_To_Bits(codes_statement + 4),
+	m_scolon = Convert_To_Bits(semcol_m),
+	m_comma = Convert_To_Bits(comma_m),
+	af_headfunproc = Convert_To_Bits(af_head),
+	m_fpar = Convert_To_Bits(f_param);
+	m_twopoint = Convert_To_Bits(twpoint_m);
+	m_colon = Convert_To_Bits(colon_m),
 
 	illegalcodes = Convert_To_Bits(codes_illegal);
 	idstarters = Convert_To_Bits(codes_idstart);
@@ -1112,7 +1127,8 @@ void main()
 	ReadNextLine();
 	ch = line[0];
 	NextSym();
-	Programme();
+	Programme(blockfol);
+	WriteErrorsListing(positionnow.linenumber+1);
 	if (ErrorOverflow)
 		file_listing << "\nКoмпиляция окончена: ошибок > " << ErrInx << "!" << endl;
 	else

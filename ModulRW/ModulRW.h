@@ -6,6 +6,7 @@
 #include "string"
 #include <map>
 #include <vector>
+#include <ctype.h>
 
 #define ErrMax 99						//максимальное  кол-во ошибок в программе
 #define ErrCount 334					//кол-во ошибок, для кт есть описания
@@ -64,7 +65,7 @@ void WriteErrorsListing(unsigned current_str);
 /*функция чтения новой строки из программы*/
 void ReadNextLine();
 /*функция добавления ошибки в таблицу ошибок*/
-void Error(unsigned errorcode, unsigned number_str, unsigned number_pos);
+void Error(unsigned errorcode, textposition now);
 /*функция чтения ошибок из файла с ошибками*/
 void ReadErrors();
 /*функция печати кода символа в файл*/

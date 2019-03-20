@@ -1,14 +1,42 @@
              Работает Pascal - компилятор
                    Листинг программы
    1  program af;
-   2  var n,k: integer;
-   3  begin
-   4  x:=ReadInteger;
-   5  if x=k then
-   6  begin
-   7  Exists := true;
-   8  end;
-   9  if Exists then k else k;
-  10  end.
+   2  var n,k: ;
+**01**         ^ ошибка код 18
+****** ошибка в разделе описаний
+   3      b:real;
+   4  procedure myproc (a: integer; c: boolean);
+   5      var j: integer;
+   6      begin
+   7          repeat
+   8              x:=(a+b)*c/d-s;
+   9          until J=O;
+  10      end;
+  11  begin
+  12      begin
+  13          x:=10000000000000000;
+**02**           ^ ошибка код 203
+****** целая константа превышает предел
+  14          x:=(a+b)*c/d-s;
+  15          if x=k then
+  16          begin
+  17              Exists := true;
+  18          end;
+  19      end;
+  20      if Exists then k els k;
+**03**                     ^ ошибка код 6
+****** запрещенный символ
+  21      while Exists do
+  22      begin
+  23          x:=(a or b)*c mod d div s;;
+  24      end;
+  25      for V:=E1 to E2 do Body;
+  26      for I:=2 downto 63 do
+  27  	    begin
+  28              if Data > Max then
+  29                 Max:=Data;
+  30  	    end;
+  31      myproc(35, TRYE);
+  32  end.
 
-Кoмпиляция окончена: ошибок - 0!
+Кoмпиляция окончена: ошибок - 3!

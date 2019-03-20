@@ -1,11 +1,13 @@
 program af;
-var n,k: ;
+var n,k: integer;
     b:real;
 procedure myproc (a: integer; c: boolean);
     var j: integer;
     begin
         repeat
-            x:=(a+b)*c/d-s;
+            K:=I mod J;
+            I:=J;
+            J:=K;
         until J=O;
     end;
 begin
@@ -18,7 +20,7 @@ begin
         end;
     end;
     if Exists then k else k;
-    while Exists do
+    while Exists DO
     begin
         x:=(a or b)*c mod d div s;;
     end;

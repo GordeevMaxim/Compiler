@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include "ModulRW.h"
 #include "DECW.h"
-//#include "iodefs.h"
-//#include "Types.h"
-//#include "Typet.h"
 
 extern unsigned Symbol;
 extern char ch;
@@ -18,28 +15,28 @@ extern textposition token;
 //-----------------------------------------œ–Œ“Œ“»œ€ ‘”Õ ÷»…(Õ¿◊¿ÀŒ)--------------------------------------------//
 void Programme(unsigned *followers);
 void Block(unsigned *followers);
-void TypePart();
+void TypePart(unsigned *followers);
 void Type(unsigned *followers);
-void Constant();
-void ArrayType(unsigned *followers);
+//void Constant();
+//void ArrayType(unsigned *followers);
 void VarPart(unsigned *followers);
 void VarDeclaration(unsigned *followers, unsigned *fol);
-void ConstPart();
+//void ConstPart();
 void ProcFuncPart(unsigned *followers);
 void Statement(unsigned *followers);
 void AssignStatement(unsigned *followers);
 void SimpleType(unsigned *followers);
-void LimitedType();
-void CompoundType(unsigned *followers);
-void ReferenceType();
-void PerechislType();
+//void LimitedType();
+//void CompoundType(unsigned *followers);
+//void ReferenceType();
+//void PerechislType();
 void NameType();
 void One_Type(unsigned *followers);
-void Un_Int();
-void BazisType(unsigned *followers);
-void One_Const();
-void Un_Real();
-void NameConstant();
+//void Un_Int();
+//void BazisType(unsigned *followers);
+//void One_Const();
+//void Un_Real();
+//void NameConstant();
 void DeclarationFun(unsigned *followers);
 void DeclarationProc(unsigned *followers);
 void DeclarationProcFun(unsigned *followers);

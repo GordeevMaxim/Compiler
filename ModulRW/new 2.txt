@@ -1,10 +1,5 @@
 1program example;
 var h,g:text; 
-    d:file;
-    a1,a2,: array [1..2] of integer;
-    a1,a2: array [1..g] of integer;
-    a1,a2: array [g..2] of; -= integer;
-    a1,a2: array [adfdfg..b] of; array [adfdfg..b,adfdfg..do,adfdfg..b] of array [adfdfg..b,adfdfg..b] of integer;
     ***1** a,l :integer;
     b,f (a, ,f);
     f1,f1:(a1,a2, ,a3) 56;
@@ -23,9 +18,9 @@ begin
             
             (* убитое выражение: *)
             F:=5*h-345+(len*+(54/g - 24*4) - j + 8/(las/(23 + f)-index));
-         
+       
         until (a<<>b);
-            
+
         f:=1;
         m:=f/8 + 5*a
     end
@@ -37,6 +32,7 @@ begin
        end
      else begin
        (a := k; 
+
        end;
      end;
 end***.

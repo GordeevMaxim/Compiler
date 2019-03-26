@@ -30,7 +30,10 @@ extern unsigned int *op_rel,
 *op_add,
 *af_iftrue,
 *af_for1,
-*af_whilefor;
+*af_whilefor,
+*idstarters,
+*m_scolon,
+*af_repeat;
 
 //-----------------------------------------БЛОК (НАЧАЛО)-------------------------------------------------------//
 
@@ -38,21 +41,19 @@ extern unsigned int *op_rel,
 void Block(unsigned *followers)
 {
 	unsigned ptra[SET_SIZE];
-	if (!Belong(Symbol, begpart))
+	if (!Belong(Symbol, begpart))//labelsy,constsy,typesy,varsy,functionsy,proceduresy, beginsy, eolint
 	{
 		Error(18, token); /* ошибка в разделе описаний */
 		Skipto2(begpart, followers);
 	}
 	if (Belong(Symbol, begpart))
 	{
-		SetDisjunct(st_typepart,followers,ptra);
-		ConstPart();//объявление констант
+		SetDisjunct(st_varpart, followers, ptra);//pointc,endoffile,eolint + varsy,functionsy,proceduresy, beginsy, eolint
+		TypePart(ptra);//описание типов
 
-		SetDisjunct(st_varpart, followers, ptra);
-		TypePart();//описание типов
-
-		SetDisjunct(st_procfuncpart, followers, ptra);
+		SetDisjunct(st_procfuncpart, followers, ptra);//pointc,endoffile,eolint + functionsy,proceduresy, beginsy, eolint
 		VarPart(ptra);//описание переменных
+		SetDisjunct(st_statpart, followers, ptra);//pointc,endoffile,eolint + beginsy, eolint
 		ProcFuncPart(ptra);//описание процедур и функций
 		BeginStatement(followers);//тело программы (или составной оператор)
 		if (!Belong(Symbol, followers))
@@ -67,88 +68,88 @@ void Block(unsigned *followers)
 
 
 
-//------------------------------------РАЗДЕЛ КОНСТАНТ(НАЧАЛО)---------------------------------------------------//
-
-/* Анализ конструкции "раздел констант" */
-void ConstPart()
-{
-	if (Symbol == constsy)
-	{
-		NextSym();
-		do {
-			One_Const();
-			Accept(semicolonc);
-		} while (Symbol == ident);
-	}
-}
-/* Анализ конструкции "определение одной константы" */
-void One_Const()
-{
-	Accept(ident);
-	Accept(equalc);
-	Constant();
-}
-/* Анализ конструкции "константа" (число, символ, слово ...) */
-void Constant()
-{
-	switch (Symbol)
-	{
-	case integerc:
-		Un_Int();
-		break;
-	case realc:
-		Un_Real();
-		break;
-	case plusc:;
-	case minusc:
-		NextSym();
-		Constant();
-		break;
-	case ident:
-		NameConstant();
-		break;
-	}
-}
-/* Анализ конструкции "целое без знака" */
-void Un_Int()
-{
-	Accept(integerc);
-}
-/* Анализ конструкции "вещественное без знака" */
-void Un_Real()
-{
-	Accept(realc);
-}
-/* Анализ конструкции "имя константы" */
-void NameConstant()
-{
-	Accept(ident);
-}
-//void String()
-////Анализ конструкции "строка"
+////------------------------------------РАЗДЕЛ КОНСТАНТ(НАЧАЛО)---------------------------------------------------//
+//
+// Анализ конструкции "раздел констант" */
+//void ConstPart()
 //{
-//	Accept(stringc);
+//	if (Symbol == constsy)
+//	{
+//		NextSym();
+//		do {
+//			One_Const();
+//			Accept(semicolonc);
+//		} while (Symbol == ident);
+//	}
 //}
-//void Const_Char()
-////Анализ конструкции "символ"
+// Анализ конструкции "определение одной константы" */
+//void One_Const()
 //{
-//	Accept(charc);
+//	Accept(ident);
+//	Accept(equalc);
+//	Constant();
 //}
-
-//------------------------------------РАЗДЕЛ КОНСТАНТ(КОНЕЦ)----------------------------------------------------//
+// Анализ конструкции "константа" (число, символ, слово ...) */
+//void Constant()
+//{
+//	switch (Symbol)
+//	{
+//	case integerc:
+//		Un_Int();
+//		break;
+//	case realc:
+//		Un_Real();
+//		break;
+//	case plusc:;
+//	case minusc:
+//		NextSym();
+//		Constant();
+//		break;
+//	case ident:
+//		NameConstant();
+//		break;
+//	}
+//}
+// Анализ конструкции "целое без знака" */
+//void Un_Int()
+//{
+//	Accept(integerc);
+//}
+// Анализ конструкции "вещественное без знака" */
+//void Un_Real()
+//{
+//	Accept(realc);
+//}
+// Анализ конструкции "имя константы" */
+//void NameConstant()
+//{
+//	Accept(ident);
+//}
+////void String()
+//////Анализ конструкции "строка"
+////{
+////	Accept(stringc);
+////}
+////void Const_Char()
+//////Анализ конструкции "символ"
+////{
+////	Accept(charc);
+////}
+//
+////------------------------------------РАЗДЕЛ КОНСТАНТ(КОНЕЦ)----------------------------------------------------//
 
 
 
 //------------------------------------РАЗДЕЛ ТИПОВ(НАЧАЛО)------------------------------------------------------//
 
 /* Анализ конструкции "раздел типов" */
-void TypePart()
+void TypePart(unsigned *followers)
 {
 	if (Symbol == typesy)
 	{
 		NextSym();
 		do {
-			//One_Type();
+			One_Type(followers);
 			Accept(semicolonc);
 		} while (Symbol == ident);
 	}
@@ -175,12 +176,12 @@ void Type(unsigned *followers)
 	{
 		if (Symbol == integerc || Symbol == plusc || Symbol == minusc || Symbol == charc || Symbol == leftparc || Symbol == ident)
 			SimpleType(followers);//простой тип
-		else
-			if (Symbol == arraysy || Symbol == setsy || Symbol == filesy)
-				CompoundType(followers);//составной тип
-			else
-				if (Symbol == arrowc)
-					ReferenceType();//ссылочный тип
+		//else
+		//	if (Symbol == arraysy || Symbol == setsy || Symbol == filesy)
+		//		CompoundType(followers);//составной тип
+		//	else
+		//		if (Symbol == arrowc)
+		//			ReferenceType();//ссылочный тип
 		if (!Belong(Symbol, followers))
 		{
 			Error(6, token);
@@ -191,33 +192,16 @@ void Type(unsigned *followers)
 /* Анализ конструкции "простой тип" */
 void SimpleType(unsigned *followers)
 {
-	switch (Symbol)
-	{
-	case leftparc: PerechislType(); break;//перечислимый тип
-	case ident: NameType();break;//стандартный тип  <<<для массива будет отслеживаться на этапе семантического Анализа>>>
-	default://ограниченный тип
-		if (Symbol == integerc || Symbol == plusc|| Symbol == minusc || Symbol == charc)
-			LimitedType();
-	}
-}
-/* Анализ конструкции перечислимый тип */
-void PerechislType()
-{
-	NextSym();
-	Accept(ident);
-	while (Symbol ==commac)
-	{
-		NextSym();
-		Accept(ident);
-	}
-	Accept(rightparc);
-}
-/* Анализ конструкции ограниченный тип */
-void LimitedType()
-{
-	Constant();
-	Accept(twopointsc);
-	Constant();
+	if (Symbol = ident)
+		NameType();
+	//switch (Symbol)
+	//{
+	//case leftparc: PerechislType(); break;//перечислимый тип
+	//case ident: NameType();break;//стандартный тип
+	//default://ограниченный тип
+	//	if (Symbol == integerc || Symbol == plusc|| Symbol == minusc || Symbol == charc)
+	//		LimitedType();
+	//}
 }
 /* стандартный тип или Анализ конструкции имя типа */
 void NameType()
@@ -229,52 +213,72 @@ void NameType()
 		Accept(ident);
 	}
 }
-/* Анализ конструкции составной тип */
-void CompoundType(unsigned *followers)
-{
-	switch (Symbol)
-	{
-	case arraysy: //массив
-		ArrayType(followers);
-		break;
-	case setsy://множество
-		NextSym();
-		Accept(ofsy);
-		BazisType(followers);
-		break;
-	case filesy://файловый тип
-		NextSym();
-		Accept(ofsy);
-		Type(followers);
-		break;
-	}
-}
-/* Анализ конструкции тип элементов множества */
-void BazisType(unsigned *followers)
-{
-	SimpleType(followers);
-}
-/* Анализ конструкции ссылочный тип */
-void ReferenceType()
-{
-	NextSym();
-	NameType();
-}
-/* Анализ конструкции "регулярный тип" или массив */
-void ArrayType(unsigned *followers)
-{
-	Accept(arraysy);
-	Accept(lbracketc);
-	SimpleType(followers);
-	while (Symbol ==commac)
-	{
-		NextSym();
-		SimpleType(followers);
-	}
-	Accept(rbracketc);
-	Accept(ofsy);
-	Type(followers);
-}
+
+// Анализ конструкции перечислимый тип */
+//void PerechislType()
+//{
+//	NextSym();
+//	Accept(ident);
+//	while (Symbol ==commac)
+//	{
+//		NextSym();
+//		Accept(ident);
+//	}
+//	Accept(rightparc);
+//}
+// Анализ конструкции ограниченный тип */
+//void LimitedType()
+//{
+//	Constant();
+//	Accept(twopointsc);
+//	Constant();
+//}
+// Анализ конструкции составной тип */
+//void CompoundType(unsigned *followers)
+//{
+//	switch (Symbol)
+//	{
+//	case arraysy: //массив
+//		ArrayType(followers);
+//		break;
+//	case setsy://множество
+//		NextSym();
+//		Accept(ofsy);
+//		BazisType(followers);
+//		break;
+//	case filesy://файловый тип
+//		NextSym();
+//		Accept(ofsy);
+//		Type(followers);
+//		break;
+//	}
+//}
+// Анализ конструкции тип элементов множества */
+//void BazisType(unsigned *followers)
+//{
+//	SimpleType(followers);
+//}
+//Анализ конструкции ссылочный тип */
+//void ReferenceType()
+//{
+//	NextSym();
+//	NameType();
+//}
+// Анализ конструкции "регулярный тип" или массив */
+//void ArrayType(unsigned *followers)
+//{
+//	Accept(arraysy);
+//	Accept(lbracketc);
+//	SimpleType(followers);
+//	while (Symbol ==commac)
+//	{
+//		NextSym();
+//		SimpleType(followers);
+//	}
+//	Accept(rbracketc);
+//	Accept(ofsy);
+//	Type(followers);
+//}
 
 //--------------------------------------------РАЗДЕЛ ТИПОВ( КОНЕЦ )---------------------------------------------//
 
@@ -294,13 +298,16 @@ void VarPart(unsigned *followers)
 	{
 		SetDisjunct(af_sameparam, followers, ptra);
 		Accept(varsy);
-		do {
+		VarDeclaration(ptra, followers);
+		while (Symbol == semicolonc)
+		{
+			NextSym();
 			VarDeclaration(ptra, followers);
-			Accept(semicolonc);
-		} while (Symbol == ident);
+			//Accept(semicolonc);
+		}
 		if (!Belong(Symbol, followers))
 		{
-			Error(6, token); /* заперещённый символ */
+			Error(2, token); /* должно идти имя */
 			Skipto1(followers);
 		}
 	}
@@ -515,7 +522,7 @@ void Expression(unsigned *followers)
 	unsigned ptra[SET_SIZE];
 	if (!Belong(Symbol, st_express))
 	{
-		Error(23, token);
+		Error(42, token);
 		Skipto2(st_express, followers);
 	}
 	if (Belong(Symbol, st_express))
@@ -540,7 +547,7 @@ void SimpleExpression(unsigned *followers)
 	unsigned ptra[SET_SIZE];
 	if (!Belong(Symbol, st_express))
 	{
-		Error(23, token);
+		Error(42, token);
 		Skipto2(st_express, followers);
 	}
 	if (Belong(Symbol, st_express))
@@ -567,7 +574,7 @@ void Term(unsigned *followers)
 	unsigned ptra[SET_SIZE];
 	if (!Belong(Symbol, st_termfact))
 	{
-		Error(23, token);
+		Error(42, token);
 		Skipto2(st_termfact, followers);
 	}
 	if (Belong(Symbol, st_termfact))
@@ -594,7 +601,7 @@ void Factor(unsigned *followers)
 	unsigned ptra[SET_SIZE];
 	if (!Belong(Symbol, st_termfact))
 	{
-		Error(23, token);
+		Error(42, token);
 		Skipto2(st_termfact, followers);
 	}
 	if (Belong(Symbol, st_termfact))
@@ -606,7 +613,10 @@ void Factor(unsigned *followers)
 			SetDisjunct(followers, af_3const1, ptra);//af_3const1 = twopoints,comma,rbracket
 			SetDisjunct(ptra, rpar, ptra);
 			Expression(ptra);
-			Accept(rightparc);
+			if (Symbol == rightparc)
+				Accept(rightparc);
+			else
+				Skipto1(m_scolon);
 			break;
 		case notsy:// отрицание перед всем множителем
 			NextSym();
@@ -642,7 +652,7 @@ void NameFunc(unsigned *followers)
 	unsigned ptra[SET_SIZE];
 	if (!Belong(Symbol, st_express))
 	{
-		Error(23, token);
+		Error(42, token);
 		Skipto2(st_express, followers);
 	}
 	if (Belong(Symbol, st_express))
@@ -670,11 +680,10 @@ void Statement(unsigned *followers)
 	unsigned ptra[SET_SIZE];
 	if (!Belong(Symbol, st_statement))
 	{
-		Error(24, token);
+		Error(113, token);
 		Skipto2(st_statement, followers);
 	}
-	if (Belong(Symbol, st_statement))//intc,endsy,elsesy,untilsy,ident,beginsy,ifsy,
-	//whilesy,repeatsy,forsy,casesy,withsy,semicolon,gotosy,eolint
+	if (Belong(Symbol, st_statement))//integerc,endsy,elsesy,untilsy,ident,beginsy,ifsy,whilesy,repeatsy,forsy,casesy,withsy,semicolon,gotosy,eolint
 	{
 		SetDisjunct(followers, st_statement, ptra);
 		
@@ -687,6 +696,7 @@ void Statement(unsigned *followers)
 			break;
 		case repeatsy:
 			//Анализ конструкции "цикл с постусловием"
+			SetDisjunct(ptra, af_repeat, ptra);
 			RepeatStatement(ptra);
 			break;
 		case forsy:
@@ -704,7 +714,7 @@ void Statement(unsigned *followers)
 			CaseStatement(ptra);
 			break;
 		case beginsy:
-			BeginStatement(followers);
+			BeginStatement(ptra);
 			break;
 		case semicolonc:
 			Accept(semicolonc);
@@ -713,7 +723,7 @@ void Statement(unsigned *followers)
 			Accept(ident);
 			if (Symbol == leftparc)
 			{
-				SetDisjunct(followers, rpar, ptra);
+				SetDisjunct(followers, rpar, ptra); // rightparc,eolint 
 				CallProc(ptra);
 				Accept(rightparc);
 			}
@@ -749,12 +759,19 @@ void BeginStatement(unsigned *followers)
 	if (Belong(Symbol, st_statpart))//st_statpart содержит beginsy
 	{
 		Accept(beginsy);
-		SetDisjunct(followers, af_compstatement, ptra); //af_compstatement содержит semicolon, endsy
-		do {
-			if (Symbol == semicolonc) Accept(semicolonc);
+		SetDisjunct(followers, st_statement, ptra); //semicolon, endsy
+		//SetDisjunct(followers, idstarters, ptra);
+		while (Symbol != endsy) {
 			Statement(ptra);
-		} while (Symbol == semicolonc);
+			Accept(semicolonc);			
+		}
 		Accept(endsy);
+		//if (Symbol == semicolonc) NextSym();
+		if (!Belong(Symbol, followers))
+		{
+			Error(61, token);
+			Skipto1(followers);
+		}
 	}
  }
 /* Анализ конструкции "цикл с предусловием" */
@@ -849,11 +866,21 @@ void Programme(unsigned *followers)
 	if (Belong(Symbol, st_all))
 	{
 		Accept(programsy);
-		Accept(ident);
-		Accept(semicolonc);
-		Block(blockfol);
+		if (!Belong(Symbol, idstarters))  //idstarters содержит idetn
+		{
+			Error(2, token); //должно идти имя
+			Skipto2(idstarters, followers);
+		}
+		Accept(ident);	
+		if (!Belong(Symbol, m_scolon))  //idstarters содержит semilicon
+		{
+			Error(14, token); //должно идти ;
+			Skipto2(m_scolon, followers);
+		}		
+		Accept(semicolonc);		
+		Block(blockfol);// pointc,endoffile,eolint
 		Accept(pointc);
-		//while (!feof(file_program)) NextCh();
+		while (!feof(file_program)) NextCh();
 		//if (!Belong(Symbol, followers))
 		//{
 		//	Error(6, token);

@@ -135,13 +135,15 @@ unsigned
 unsigned *illegalcodes;
 vector <ErrorTable> ErrTable(ErrMax);	// таблица ошибок из  файла с ошибками
 
-unsigned i = 0,							// счётчик
+unsigned i = 0,							// счётчик таблицы ошибок
 ErrorOverflow = false,			// 
 ErrInx = 0,						// счётчик ошибок
-LastInLine;						// длина текущей строки
+LastInLine,						// длина текущей строки
+j = 0;							// кол-во символов в отступе
 unsigned Symbol;						//код символа
 char ch = '-';							// текущая литера
-char line[90] = "";						// текущая строка
+char line[128] = "";						// текущая строка
+char begin_line[128] = "";						// текущая строка
 char **MsgErr = new char *[ErrCount];	//массив сообщений об ошибках
 int flag;
 bool err_203;
@@ -226,7 +228,7 @@ void MSGERR()
 		MsgErr[i] = (char*)"Такого сообщения нет в файле данных !";
 	}
 	MsgErr[1] = (char*)"ошибка в простом типе";
-	MsgErr[2] = (char*)"Такого сообщения нет в файле данных !""должно идти имя";
+	MsgErr[2] = (char*)"должно идти имя";
 	MsgErr[3] = (char*)"должно быть служебное слово PROGRAM";
 	MsgErr[4] = (char*)"должен идти символ  ')'";
 	MsgErr[5] = (char*)"должен идти символ  ':'";
@@ -246,6 +248,7 @@ void MSGERR()
 	MsgErr[19] = (char*)"ошибка в списке полей";
 	MsgErr[20] = (char*)"должен идти символ  ','";
 	MsgErr[21] = (char*)"ошибка в переменной";
+	MsgErr[42] = (char*)"Ошибка в выражении";
 	MsgErr[50] = (char*)"ошибка в константе";
 	MsgErr[51] = (char*)"должен идти символ  ':='";
 	MsgErr[52] = (char*)"должно идти слово  THEN";
@@ -269,6 +272,7 @@ void MSGERR()
 	MsgErr[109] = (char*)"тип не должен быть  REAL";
 	MsgErr[111] = (char*)"несовместимость с типом дискриминанта";
 	MsgErr[112] = (char*)"недопустимый ограниченный тип";
+	MsgErr[113] = (char*)"Ошибка в операторе";
 	MsgErr[114] = (char*)"тип основания не должен быть  REAL  или  INTEGER";
 	MsgErr[115] = (char*)"файл должен быть текстовым";
 	MsgErr[116] = (char*)"ошибка в типе параметра стандартной процедуры";
@@ -360,13 +364,14 @@ void MSGERR()
 /*чтение новой строки*/
 void ListThisLine(char *line)
 {
-	file_listing << setw(4) << setfill(' ') << positionnow.linenumber+1 << "  " <<line;
+	file_listing << setw(4) << setfill(' ') << positionnow.linenumber+1 << "   " <<line;
 }
 /*вывод ошибок для строки с номером i*/
 void WriteErrorsLine(int i)
 {
-	file_listing << "**" << setw(2) << setfill('0') << ErrInx << "**";
-	for (unsigned k = 1;k < ErrTable[i].ErrPos.charnumber;k++)
+	file_listing << "**" << setw(2) << setfill('0') << i+1 << "**";
+	file_listing << begin_line;//выводим отступ
+	for (unsigned k = 1;k < ErrTable[i].ErrPos.charnumber-j;k++)
 		file_listing << " ";
 	file_listing << "^ ошибка код " << ErrTable[i].ErrCode << endl;
 	if (ErrTable[i].ErrCode > 0 && ErrTable[i].ErrCode <= 334)
@@ -386,9 +391,10 @@ void WriteErrorsListing(unsigned current_str)
 /*функция чтения новой строки из программы*/
 void ReadNextLine()
 {
+	int i = 0; begin_line[i] = '\0';
 	if (!feof(file_program))
 	{
-		fgets(line, 100, file_program);
+		fgets(line, 128, file_program);
 		LastInLine = strlen(line);
 	}
 }
@@ -412,8 +418,8 @@ void ReadErrors()
 	for (int i = 0; i < ErrMax; i++)													 //обнуление таблицы ошибок
 	{
 		ErrTable[i].ErrCode = 0;
-		ErrTable[i].ErrPos.charnumber = 0;
-		ErrTable[i].ErrPos.linenumber = 0;
+		ErrTable[i].ErrPos.charnumber = -1;
+		ErrTable[i].ErrPos.linenumber = -1;
 	}
 	ErrInx = 0;
 }
@@ -431,16 +437,29 @@ void PrintErrorSym(unsigned errorcode, textposition position)
 char NextCh()
 {
 	i = 0;
+	j = 0;
 	if (positionnow.charnumber == LastInLine)
 	{
-		ListThisLine(line);
-		WriteErrorsListing(positionnow.linenumber + 1);
-		ReadNextLine();
-		positionnow.linenumber++;
-		positionnow.charnumber = 0;
+		if (!feof(file_program)) {
+			ListThisLine(line);
+			WriteErrorsListing(positionnow.linenumber + 1);
+			ReadNextLine();
+			positionnow.linenumber++;
+			positionnow.charnumber = 0;
+			ch = line[0];
+			while (ch == ' ' || ch == '\t')
+			{
+				begin_line[j] = line[j]; j++;
+				NextCh();
+			}
+			//positionnow.charnumber = 0;
+		}
+		else
+			ch = endoffile;
 	}
-	else positionnow.charnumber++;
-	return ch = line[positionnow.charnumber];
+
+	else ch = line[++positionnow.charnumber];
+	return ch;
 }
 /*функция пропускающая сам коментарий*/
 void End_Comment()
@@ -459,6 +478,7 @@ void End_Comment()
 	{
 		positionnow.charnumber = LastInLine-2;
 		PrintErrorSym(86, positionnow);
+		token = positionnow;
 		flag = 1;
 		ch = prev_ch;
 	}
@@ -563,6 +583,9 @@ void DetermineTheNumber(int sign)
 	}
 	else
 	{
+		positionnow.charnumber -= 2;
+		NextCh();
+		if (ch != '.') NextCh();
 		if (err_203)
 		{
 			PrintErrorSym(203, token);
@@ -582,7 +605,8 @@ void NextSym()
 		NextCh();
 	if (ch == '\n')
 	{
-		NextCh(); NextCh();
+		NextCh(); 
+		NextCh();
 		fprintf(file_rezult_lex, "\n");
 		while (ch == ' ' || ch == '\t')
 			NextCh();
@@ -732,6 +756,8 @@ void NextSym()
 				PrintSym();
 				NextCh();
 				End_Comment();
+				NextSym();
+				return;
 			}
 			else
 				Symbol = leftparc;
@@ -745,6 +771,8 @@ void NextSym()
 			PrintSym();
 			NextCh();
 			End_Comment();
+			NextSym();
+			return;
 			break;
 		case '}':
 			Symbol = frparc;
@@ -785,11 +813,15 @@ void NextSym()
 				}
 				else
 					NextCh();
-				//fprintf(file_rezult_lex, "\n");
+				fprintf(file_rezult_lex, "\n");
 				flag = 1;
 				break;
 			case 0:
 				NextCh();
+				flag = 1;
+				break;
+			case 'э':	
+				Symbol = endoffile;
 				flag = 1;
 				break;
 			default:
@@ -801,7 +833,8 @@ void NextSym()
 	}
 	if (flag != 1)
 		PrintSym();
-
+	else
+		NextSym();
 }
 /*---------------------------- B E L O N G -----------------------------*/
 /*	Функция belong. Осуществляет поиск указанного элемента в множестве.
@@ -874,7 +907,8 @@ void SetDisjunct(unsigned set1[], unsigned set2[], unsigned set3[])
 /* пропуск символов, пока не встречен символ, принадлежащий данному множеству*/
 void Skipto1(unsigned *set)/* указатель на данное 	*/
 {
-	while ((!Belong(Symbol, set)) && (Symbol != endoffile)) NextSym();
+	while ((!Belong(Symbol, set)) && (Symbol != endoffile)) 
+		NextSym();
 }
 /*---------------------------- S K I P T O 2 ---------------------------*/
 /* пропуск символов, пока не встречен символ, принадлежащий одному из данных множеств 		        */
@@ -1128,6 +1162,7 @@ void main()
 	ch = line[0];
 	NextSym();
 	Programme(blockfol);
+	//ListThisLine(line);
 	WriteErrorsListing(positionnow.linenumber+1);
 	if (ErrorOverflow)
 		file_listing << "\nКoмпиляция окончена: ошибок > " << ErrInx << "!" << endl;

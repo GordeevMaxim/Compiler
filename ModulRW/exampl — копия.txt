@@ -1,0 +1,34 @@
+program af;
+var n,k: integer;
+    b:real;
+procedure myproc (a: integer; c: boolean);
+    var j: integer;
+    begin
+        repeat
+            K:=I mod J;
+            I:=J;
+            J:=K;
+        until J=O;
+    end;
+begin
+    begin
+        x:=10000000000000000;
+        x:=(a+b)*c/d-s;
+        if x=k then
+        begin
+            Exists := true;
+        end;
+    end;
+    if Exists then k else k;
+    while Exists DO
+    begin
+        x:=(a or b)*c mod d div s;;
+    end;
+    for V:=E1 to E2 do Body;
+    for I:=2 downto 63 do
+	    begin
+            if Data > Max then
+               Max:=Data;
+	    end;
+    myproc(35, TRYE);
+end.

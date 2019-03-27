@@ -184,7 +184,7 @@ void Type(unsigned *followers)
 		//			ReferenceType();//ссылочный тип
 		if (!Belong(Symbol, followers))
 		{
-			Error(6, token);
+			Error(Symbol, token);
 			Skipto1(followers);
 		}
 	}
@@ -556,7 +556,7 @@ void SimpleExpression(unsigned *followers)
 		if (Belong(Symbol, op_add))
 			NextSym();
 		Term(ptra);
-		while (Symbol == plusc || Symbol == minusc || Symbol == orsy)
+		while ((Symbol == plusc || Symbol == minusc || Symbol == orsy) && !feof(file_program))
 		{
 			NextSym();
 			Term(ptra);
@@ -761,12 +761,11 @@ void BeginStatement(unsigned *followers)
 		Accept(beginsy);
 		SetDisjunct(followers, st_statement, ptra); //semicolon, endsy
 		//SetDisjunct(followers, idstarters, ptra);
-		while (Symbol != endsy) {
-			Statement(ptra);
-			Accept(semicolonc);			
+		while (Symbol != endsy && !feof(file_program)) {
+				Statement(ptra);
+				Accept(semicolonc);
 		}
 		Accept(endsy);
-		//if (Symbol == semicolonc) NextSym();
 		if (!Belong(Symbol, followers))
 		{
 			Error(61, token);
@@ -811,11 +810,10 @@ void CaseStatement(unsigned *followers)
 void RepeatStatement(unsigned *followers)
 {
 	Accept(repeatsy);
-	Statement(followers);
-	while (Symbol == semicolonc)
+	while (Symbol != untilsy && !feof(file_program))
 	{
-		NextSym();
 		Statement(followers);
+		Accept(semicolonc);
 	}
 	Accept(untilsy);
 	Expression(followers);

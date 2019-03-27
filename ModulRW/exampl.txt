@@ -23,9 +23,9 @@ begin
             
             (* убитое выражение: *)
             F:=5*h-345+(len*+(54/g - 24*4) - j + 8/(las/(23 + f)-index));
-         
+          {
         until (a<<>b);
-            
+
         f:=1;
         m:=f/8 + 5*a
     end
@@ -33,10 +33,10 @@ begin
    **if (a < b) then
        begin
          k:=a*;
-         mas1[];
        end
      else begin
        (a := k; 
+
        end;
      end;
 end***.

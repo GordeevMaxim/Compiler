@@ -137,6 +137,7 @@ vector <ErrorTable> ErrTable(ErrMax);	// таблица ошибок из  фа�
 
 unsigned i = 0,							// счётчик таблицы ошибок
 ErrorOverflow = false,			// 
+Flag_End_comment = false,
 ErrInx = 0,						// счётчик ошибок
 LastInLine,						// длина текущей строки
 j = 0;							// кол-во символов в отступе
@@ -364,7 +365,7 @@ void MSGERR()
 /*чтение новой строки*/
 void ListThisLine(char *line)
 {
-	file_listing << setw(4) << setfill(' ') << positionnow.linenumber+1 << "   " <<line;
+	file_listing << setw(4) << setfill(' ') << positionnow.linenumber+1 << "   " << line;
 }
 /*вывод ошибок для строки с номером i*/
 void WriteErrorsLine(int i)
@@ -373,7 +374,7 @@ void WriteErrorsLine(int i)
 	file_listing << begin_line;//выводим отступ
 	for (unsigned k = 1;k < ErrTable[i].ErrPos.charnumber-j;k++)
 		file_listing << " ";
-	file_listing << "^ ошибка код " << ErrTable[i].ErrCode << endl;
+	file_listing << " ^ ошибка код " << ErrTable[i].ErrCode << endl;
 	if (ErrTable[i].ErrCode > 0 && ErrTable[i].ErrCode <= 334)
 		file_listing << "****** " << MsgErr[ErrTable[i].ErrCode] << endl;
 	else file_listing << "****** Расшифровка для данной ошибки не существует!" << endl;
@@ -391,10 +392,26 @@ void WriteErrorsListing(unsigned current_str)
 /*функция чтения новой строки из программы*/
 void ReadNextLine()
 {
+	char bufer[128] = "";
 	int i = 0; begin_line[i] = '\0';
 	if (!feof(file_program))
 	{
 		fgets(line, 128, file_program);
+		strcpy_s(bufer,line);
+		for (int k = 0;k < strlen(line); k++)
+		{
+			if (bufer[k] == '\t')
+			{
+				line[i] = ' '; i++;
+				line[i] = ' '; i++;
+				line[i] = ' '; i++;
+				line[i] = ' '; i++;
+			}
+			else
+			{
+				line[i] = bufer[k]; i++;
+			}
+		}
 		LastInLine = strlen(line);
 	}
 }
@@ -449,9 +466,18 @@ char NextCh()
 			ch = line[0];
 			while (ch == ' ' || ch == '\t')
 			{
+				//if (ch == '\t')
+				//{
+				//	begin_line[j] = ' '; j++;
+				//	begin_line[j] = ' '; j++;
+				//	begin_line[j] = ' '; j++;
+				//}
+
 				begin_line[j] = line[j]; j++;
 				NextCh();
 			}
+			begin_line[j] = '\0';
+			//((string)begin_line).replace(((string)begin_line).begin(), ((string)begin_line).end(), '\t', ' ');
 			//positionnow.charnumber = 0;
 		}
 		else
@@ -465,25 +491,35 @@ char NextCh()
 void End_Comment()
 {
 	unsigned Prev_Symbol = Symbol;
-	char prev_ch;
-	while (Symbol != rcommentc && Symbol != frparc && !feof(file_program)) {
+	char prev_ch = NULL;
+	while (Flag_End_comment && !feof(file_program)) {
 		prev_ch = ch;
 		if (!feof(file_program))
 		{
-			if (NextCh() == ')' && prev_ch == '*' && Prev_Symbol == lcommentc) Symbol = rcommentc;
-			if (ch == '}' && Prev_Symbol == flparc) Symbol = frparc;
+			if (NextCh() == ')' && prev_ch == '*' && Prev_Symbol == lcommentc) {
+				Symbol = rcommentc;
+				Flag_End_comment = false; NextCh();
+				NextSym();
+			}
+			if (ch == '}' && Prev_Symbol == flparc) {
+				Symbol = frparc;
+				Flag_End_comment = false; NextCh();
+				NextSym();
+			}
 		}
 	}
 	if (feof(file_program) && (Symbol != rcommentc || Symbol != frparc))
 	{
-		positionnow.charnumber = LastInLine-2;
-		PrintErrorSym(86, positionnow);
+		if (prev_ch != NULL)
+			positionnow.charnumber - 2;
+		positionnow.charnumber = LastInLine;
 		token = positionnow;
-		flag = 1;
-		ch = prev_ch;
+		line[LastInLine] = '\n';
+		line[LastInLine + 1] = '\0';
+		PrintErrorSym(86, positionnow);
 	}
-	else
-		NextCh();
+	//else
+	//	NextCh();
 }
 /*определение числа*/
 void DetermineTheNumber(int sign)
@@ -742,6 +778,7 @@ void NextSym()
 			NextCh();
 			if (ch == ')')
 			{
+				Flag_End_comment = false;
 				Symbol = rcommentc;
 				NextCh();
 			}
@@ -752,12 +789,13 @@ void NextSym()
 			NextCh();
 			if (ch == '*')
 			{
-				Symbol = lcommentc;
-				PrintSym();
+				Symbol = lcommentc;				
+				//PrintSym();
 				NextCh();
-				End_Comment();
-				NextSym();
-				return;
+				if (!Flag_End_comment) {
+					Flag_End_comment = true;
+					End_Comment();
+				}
 			}
 			else
 				Symbol = leftparc;
@@ -766,15 +804,17 @@ void NextSym()
 			Symbol = rightparc;
 			NextCh();
 			break;
-		case '{':
+		case '{':			
 			Symbol = flparc;
-			PrintSym();
+			//PrintSym();
 			NextCh();
-			End_Comment();
-			NextSym();
-			return;
+			if (!Flag_End_comment) {
+				Flag_End_comment = true;
+				End_Comment();
+			}
 			break;
 		case '}':
+			Flag_End_comment = false;
 			Symbol = frparc;
 			NextCh();
 			break;
@@ -828,13 +868,16 @@ void NextSym()
 				Symbol = bad_Symbol;
 				PrintErrorSym(6, token);
 				NextCh();
+				while(!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || (ch == '_')))
+					NextCh();
+				NextSym();
 				break;
 		}
 	}
 	if (flag != 1)
 		PrintSym();
 	else
-		NextSym();
+		if (!Flag_End_comment) NextSym();
 }
 /*---------------------------- B E L O N G -----------------------------*/
 /*	Функция belong. Осуществляет поиск указанного элемента в множестве.

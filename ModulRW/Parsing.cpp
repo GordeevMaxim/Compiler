@@ -68,7 +68,8 @@ void Block(unsigned *followers)
 
 
 
-////------------------------------------РАЗДЕЛ КОНСТАНТ(НАЧАЛО)---------------------------------------------------//
+//------------------------------------РАЗДЕЛ КОНСТАНТ(НАЧАЛО)---------------------------------------------------//
+
 //
 // Анализ конструкции "раздел констант" */
 //void ConstPart()
@@ -89,37 +90,35 @@ void Block(unsigned *followers)
 //	Accept(equalc);
 //	Constant();
 //}
-// Анализ конструкции "константа" (число, символ, слово ...) */
-//void Constant()
-//{
-//	switch (Symbol)
-//	{
-//	case integerc:
-//		Un_Int();
-//		break;
-//	case realc:
-//		Un_Real();
-//		break;
-//	case plusc:;
-//	case minusc:
-//		NextSym();
-//		Constant();
-//		break;
-//	case ident:
-//		NameConstant();
-//		break;
-//	}
-//}
-// Анализ конструкции "целое без знака" */
-//void Un_Int()
-//{
-//	Accept(integerc);
-//}
-// Анализ конструкции "вещественное без знака" */
-//void Un_Real()
-//{
-//	Accept(realc);
-//}
+/* Анализ конструкции "константа" (число, символ) */
+void Constant()
+{
+	switch (Symbol)
+	{
+	case integerc:
+		Un_Int();
+		break;
+	case realc:
+		Un_Real();
+		break;
+	case plusc:;
+	case minusc:
+		NextSym();
+		Constant();
+		break;
+	}
+}
+/* Анализ конструкции "целое без знака" */
+void Un_Int()
+{
+	Accept(integerc);
+}
+/* Анализ конструкции "вещественное без знака" */
+void Un_Real()
+{
+	Accept(realc);
+}
+
 // Анализ конструкции "имя константы" */
 //void NameConstant()
 //{
@@ -130,13 +129,13 @@ void Block(unsigned *followers)
 ////{
 ////	Accept(stringc);
 ////}
-////void Const_Char()
-//////Анализ конструкции "символ"
-////{
-////	Accept(charc);
-////}
-//
-////------------------------------------РАЗДЕЛ КОНСТАНТ(КОНЕЦ)----------------------------------------------------//
+
+/* Анализ конструкции "символ" */
+void Const_Char()
+{
+	Accept(charc);
+}
+//------------------------------------РАЗДЕЛ КОНСТАНТ(КОНЕЦ)----------------------------------------------------//
 
 
 
@@ -184,7 +183,7 @@ void Type(unsigned *followers)
 		//			ReferenceType();//ссылочный тип
 		if (!Belong(Symbol, followers))
 		{
-			Error(Symbol, token);
+			Error(6, token);
 			Skipto1(followers);
 		}
 	}
@@ -192,16 +191,14 @@ void Type(unsigned *followers)
 /* Анализ конструкции "простой тип" */
 void SimpleType(unsigned *followers)
 {
-	if (Symbol = ident)
-		NameType();
-	//switch (Symbol)
-	//{
-	//case leftparc: PerechislType(); break;//перечислимый тип
-	//case ident: NameType();break;//стандартный тип
-	//default://ограниченный тип
-	//	if (Symbol == integerc || Symbol == plusc|| Symbol == minusc || Symbol == charc)
-	//		LimitedType();
-	//}
+	switch (Symbol)
+	{
+	case leftparc: PerechislType(); break;//перечислимый тип
+	case ident: NameType();break;//стандартный тип
+	default://ограниченный тип
+		if (Symbol == integerc || Symbol == plusc|| Symbol == minusc || Symbol == charc)
+			LimitedType();
+	}
 }
 /* стандартный тип или Анализ конструкции имя типа */
 void NameType()
@@ -214,25 +211,25 @@ void NameType()
 	}
 }
 
-// Анализ конструкции перечислимый тип */
-//void PerechislType()
-//{
-//	NextSym();
-//	Accept(ident);
-//	while (Symbol ==commac)
-//	{
-//		NextSym();
-//		Accept(ident);
-//	}
-//	Accept(rightparc);
-//}
-// Анализ конструкции ограниченный тип */
-//void LimitedType()
-//{
-//	Constant();
-//	Accept(twopointsc);
-//	Constant();
-//}
+/* Анализ конструкции перечислимый тип */
+void PerechislType()
+{
+	NextSym();
+	Accept(ident);
+	while (Symbol ==commac)
+	{
+		NextSym();
+		Accept(ident);
+	}
+	Accept(rightparc);
+}
+/* Анализ конструкции ограниченный тип */
+void LimitedType()
+{
+	Constant();
+	Accept(twopointsc);
+	Constant();
+}
 // Анализ конструкции составной тип */
 //void CompoundType(unsigned *followers)
 //{
@@ -298,12 +295,10 @@ void VarPart(unsigned *followers)
 	{
 		SetDisjunct(af_sameparam, followers, ptra);
 		Accept(varsy);
-		VarDeclaration(ptra, followers);
-		while (Symbol == semicolonc)
+		while (!Belong(Symbol, followers))
 		{
-			NextSym();
 			VarDeclaration(ptra, followers);
-			//Accept(semicolonc);
+			Accept(semicolonc);
 		}
 		if (!Belong(Symbol, followers))
 		{
@@ -327,14 +322,7 @@ void VarDeclaration(unsigned *followers, unsigned *fol)
 		while (Symbol == commac)
 		{			
 			NextSym();
-			if (Symbol == commac) flag = 1;
 			Accept(ident);
-			if (!Belong(Symbol, ptra) && Symbol != commac || flag)
-			{
-				Skipto2(ptra, fol);
-				if (Symbol == ident) Accept(ident);
-				flag = 0;
-			}
 		}
 		Accept(colonc);
 		Type(followers);
@@ -583,7 +571,7 @@ void Term(unsigned *followers)
 		//+операиции мультипликат
 		SetDisjunct(ptra, op_mult, ptra);
 		Factor(ptra);
-		while (Belong(Symbol, op_mult))
+		while (Belong(Symbol, op_mult) && !feof(file_program))
 		{
 			NextSym();
 			Factor(ptra);

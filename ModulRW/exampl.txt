@@ -10,6 +10,13 @@ var h,g:text;
     f1,f1:(a1,a2, ,a3) 56;
     d1,,d2:; ***
     f,k:2..6;
+procedure pr(a:char); {a - формальный параметр}
+var i:integer;
+begin
+	for i:=1 to 60 do begin
+		F:=5*h-345+(len*(54/g - 24*4) - j + 8/(las/(23 + f)-index));
+	end;
+end;
 
 begin
     for i:=1 to 5 do
@@ -23,7 +30,10 @@ begin
             
             (* убитое выражение: *)
             F:=5*h-345+(len*+(54/g - 24*4) - j + 8/(las/(23 + f)-index));
-          {
+            
+			(* вызов процедуры: *)
+			pr(a);
+			
         until (a<<>b);
 
         f:=1;

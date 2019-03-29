@@ -1,4 +1,9 @@
 1program example;
+type
+	mytype=integer;
+	mytype2 : real;
+	mtype3=;
+	3er=integer;
 var h,g:text; 
     d:file;
     a1,a2,: array [1..2] of integer;
@@ -10,18 +15,22 @@ var h,g:text;
     f1,f1:(a1,a2, ,a3) 56;
     d1,,d2:; ***
     f,k:2..6;
-procedure pr(a:char); {a - формальный параметр}
+	a:boolean;
+	c:char;
+	r:real;
+procedure pr(a:char;b:integer;c:mytype;,); {a - формальный параметр}
 var i:integer;
 begin
 	for i:=1 to 60 do begin
-		F:=5*h-345+(len*(54/g - 24*4) - j + 8/(las/(23 + f)-index));
+		F[f,g]:=5*h-345+*(len*(54/g - 24*4) - j + 8/(las/(23 + f)-index));
 	end;
 end;
 
 begin
     for i:=1 to 5 do
         a:=5;
-    while (a >= b) do
+		;
+    while (a >= b) d1o
     begin
         repeat
             
@@ -33,9 +42,17 @@ begin
             
 			(* вызов процедуры: *)
 			pr(a);
+			pr(1);
+			
+			F[1,2]:= 2 + 3 / 3 * 23;
+
+			pr();
+			pr;
+			pr(1,);
+			
 			
         until (a<<>b);
-
+		{вапсрмиопа}
         f:=1;
         m:=f/8 + 5*a
     end

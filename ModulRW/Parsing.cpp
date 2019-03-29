@@ -33,7 +33,9 @@ extern unsigned int *op_rel,
 *af_whilefor,
 *idstarters,
 *m_scolon,
-*af_repeat;
+*af_repeat,
+*st_constant,
+*st_startstatement;
 
 //-----------------------------------------БЛОК (НАЧАЛО)-------------------------------------------------------//
 
@@ -63,7 +65,6 @@ void Block(unsigned *followers)
 		}
 	}
 }
-
 //-----------------------------------------БЛОК (КОНЕЦ)--------------------------------------------------------//
 
 
@@ -140,41 +141,63 @@ void Const_Char()
 
 
 //------------------------------------РАЗДЕЛ ТИПОВ(НАЧАЛО)------------------------------------------------------//
-
 /* Анализ конструкции "раздел типов" */
 void TypePart(unsigned *followers)
 {
+	unsigned ptra[SET_SIZE];
+	if (!Belong(Symbol, st_typepart))
+	{
+		Error(1, token);
+		Skipto2(st_typepart, followers);
+	}
 	if (Symbol == typesy)
 	{
 		NextSym();
-		do {
-			One_Type(followers);
+		SetDisjunct(af_sameparam, followers, ptra);
+		while (!Belong(Symbol, followers)) {
+			One_Type(ptra);
 			Accept(semicolonc);
-		} while (Symbol == ident);
+		} 
+		if (!Belong(Symbol, followers))
+		{
+			Error(2, token); /* должно идти имя */
+			Skipto1(followers);
+		}
 	}
 }
 /* Анализ конструкции "определение одного типа" */
 void One_Type(unsigned *followers)
 {
-	Accept(ident);
-	Accept(equalc);
+	if (!Belong(Symbol, idstarters))
+	{
+		Error(2, token);
+		Skipto2(idstarters, followers);
+	}
+	if (Symbol == ident) {
+		NextSym();
+		Accept(equalc);
+	}
+	if (!Belong(Symbol, idstarters))
+	{
+		Skipto2(idstarters, followers);
+	}
 	Type(followers);
 }
 
 //------------------ОПИСАНИЕ ТИПОВ ( ПЕРЕЧИСЛИМЫЙ, ОГРАНИЧЕННЫЙ,СТАНДАРТНЫЙ, СОСТАВНОЙ... )--------------------//
-
 /* Анализ конструкции "тип" */
 void Type(unsigned *followers)
 {
 	if (!Belong(Symbol, st_typ))
 	{
-		Error(18, token);
+		Error(10, token);
 		Skipto2(st_typ, followers);
 	}
 	if (Belong(Symbol, st_typ))
 	{
 		if (Symbol == integerc || Symbol == plusc || Symbol == minusc || Symbol == charc || Symbol == leftparc || Symbol == ident)
 			SimpleType(followers);//простой тип
+		//Accept(semicolonc);
 		//else
 		//	if (Symbol == arraysy || Symbol == setsy || Symbol == filesy)
 		//		CompoundType(followers);//составной тип
@@ -210,7 +233,6 @@ void NameType()
 		Accept(ident);
 	}
 }
-
 /* Анализ конструкции перечислимый тип */
 void PerechislType()
 {
@@ -297,7 +319,7 @@ void VarPart(unsigned *followers)
 		Accept(varsy);
 		while (!Belong(Symbol, followers))
 		{
-			VarDeclaration(ptra, followers);
+			VarDeclaration(ptra);
 			Accept(semicolonc);
 		}
 		if (!Belong(Symbol, followers))
@@ -308,9 +330,9 @@ void VarPart(unsigned *followers)
 	}
 }
 /* Анализ конструкции "описание однотипных переменных" */
-void VarDeclaration(unsigned *followers, unsigned *fol)
+void VarDeclaration(unsigned *followers)
 {
-	unsigned ptra[SET_SIZE], dop[SET_SIZE];
+	unsigned ptra[SET_SIZE];
 	int flag = 0;
 	if (!Belong(Symbol, idstarters))
 	{
@@ -336,8 +358,9 @@ void VarDeclaration(unsigned *followers, unsigned *fol)
 
 //------------------------------------------РАЗДЕЛ ПЕРЕМЕННЫХ(КОНЕЦ)--------------------------------------------//
 
-//---------------------------------------РАЗДЕЛ ПРОЦЕДУР И ФУНКЦИЙ(НАЧАЛО)--------------------------------------//
 
+
+//---------------------------------------РАЗДЕЛ ПРОЦЕДУР И ФУНКЦИЙ(НАЧАЛО)--------------------------------------//
 /* Анализ конструкции "раздел процедур и фукций" */
 void ProcFuncPart(unsigned *followers)
 {
@@ -469,7 +492,7 @@ void FormalParameters(unsigned *followers, unsigned *fol)
 {
 	if (!Belong(Symbol, m_fpar))
 	{
-		Error(20, token);//не знаю как описать
+		Error(2, token);//
 		Skipto2(m_fpar, followers);
 	}
 	if (Belong(Symbol, m_fpar))
@@ -477,15 +500,15 @@ void FormalParameters(unsigned *followers, unsigned *fol)
 		switch (Symbol)
 		{
 		case ident:
-			VarDeclaration(followers, fol);
+			VarDeclaration(followers);
 			break;
 		case varsy:
 			NextSym();
-			VarDeclaration(followers, fol);
+			VarDeclaration(followers);
 			break;
 		case functionsy:
 			NextSym();
-			VarDeclaration(followers, fol);
+			VarDeclaration(followers);
 			break;
 		case proceduresy:
 			NextSym();
@@ -502,6 +525,8 @@ void FormalParameters(unsigned *followers, unsigned *fol)
 	}
 }
 //---------------------------------------РАЗДЕЛ ПРОЦЕДУР И ФУНКЦИЙ(КОНЕЦ)---------------------------------------//
+
+
 
 //--------------------------------------------ВЫРАЖЕНИЕ ( НАЧАЛО )----------------------------------------------//
 /* Анализ конструкции "выражение" */
@@ -648,7 +673,8 @@ void NameFunc(unsigned *followers)
 		SetDisjunct(followers, m_comma, ptra);
 		do {
 			NextSym();
-			Expression(ptra);
+			/*if (Symbol == ident) */
+				Expression(ptra);
 		} while (Symbol == commac);
 		if (!Belong(Symbol, followers))
 		{
@@ -698,26 +724,40 @@ void Statement(unsigned *followers)
 			SetDisjunct(ptra, af_iftrue, ptra);
 			IfStatement(ptra);
 			break;
-		case casesy:
-			CaseStatement(ptra);
-			break;
+		//case casesy:
+		//	CaseStatement(ptra);
+		//	break;
 		case beginsy:
 			BeginStatement(ptra);
 			break;
 		case semicolonc:
-			Accept(semicolonc);
+			//Accept(semicolonc);
 			break;
 		case ident:
 			Accept(ident);
-			if (Symbol == leftparc)
+			switch (Symbol)
 			{
+			case leftparc:
+				//Анализ конструкции "вызов процедуры"
 				SetDisjunct(followers, rpar, ptra); // rightparc,eolint 
 				CallProc(ptra);
 				Accept(rightparc);
+				break;
+			case  assignc:
+				//Анализ конструкции ""
+				GivingStatement(followers);
+				break;
+			case  semicolonc:
+				break;
+			default:
+				if (!Belong(Symbol, af_assignment))
+				{
+					Error(6, token);
+					Skipto1(af_assignment);
+				}
+				GivingStatement(followers);
+				break;
 			}
-			else
-				if (Symbol == assignc)
-					GivingStatement(followers);
 			break;
 		case endsy:		break;
 		}
@@ -765,16 +805,32 @@ void BeginStatement(unsigned *followers)
 void WhileStatement(unsigned *followers)
 {	
 	Accept(whilesy);
-	Expression(followers);
-	Accept(dosy);
+	if (Belong(Symbol, st_express))
+	{
+		Expression(followers);
+		if (Symbol == dosy)
+			NextSym();
+		else {
+			Accept(dosy);
+			Skipto1(st_startstatement);
+		}
+	}
 	Statement(followers);
 }
 /* Анализ конструкции "условный оператор" */
 void IfStatement(unsigned *followers)
 {
 	Accept(ifsy);
-	Expression(followers);
-	Accept(thensy);
+	if (Belong(Symbol, st_express))
+	{
+		Expression(followers);
+		if (Symbol == thensy)
+			NextSym();
+		else {
+			Accept(thensy);
+			Skipto1(st_startstatement);
+		}
+	}
 	Statement(followers);
 	if (Symbol == elsesy)
 	{
@@ -782,18 +838,20 @@ void IfStatement(unsigned *followers)
 		Statement(followers);
 	}
 }
-/* Анализ конструкции "оператор выбора " */
-void CaseStatement(unsigned *followers)
-{
-	Accept(casesy);
-	Expression(followers);
-	Accept(ofsy);
-	while (Symbol == semicolonc)
-	{
-		NextSym();
-	}
-	Accept(endsy);
-}
+
+// Анализ конструкции "оператор выбора " */
+//void CaseStatement(unsigned *followers)
+//{
+//	Accept(casesy);
+//	Expression(followers);
+//	Accept(ofsy);
+//	while (Symbol == semicolonc)
+//	{
+//		NextSym();
+//	}
+//	Accept(endsy);
+//}
+
 /* Анализ конструкции "цикл с постусловием" */
 void RepeatStatement(unsigned *followers)
 {
@@ -809,21 +867,64 @@ void RepeatStatement(unsigned *followers)
 /* Анализ конструкции "цикл с параметром" */
 void ForStatement(unsigned *followers)
 {
+	unsigned ptra[SET_SIZE];
 	Accept(forsy);
-	Accept(ident);
-	Accept(assignc);
-	Expression(followers);
-	if (Symbol == tosy || Symbol == downtosy)
+	if (Symbol == ident)
+	{
 		NextSym();
-	Expression(followers);
-	Accept(dosy);
+		if (Symbol == assignc)
+		{
+			NextSym();
+			if (Belong(Symbol, st_express))
+			{
+				Expression(followers);
+				if (Belong(Symbol, af_for1))// to или downto
+				{
+					NextSym();
+					if (Belong(Symbol, st_express))
+					{
+						Expression(followers);
+						if (Symbol == dosy)
+							NextSym();
+						else {
+							Accept(dosy);
+							Skipto1(st_startstatement);
+						}
+					}
+					else
+					{
+						Error(42, token);
+						Skipto1(st_startstatement);
+					}
+				}
+				else
+				{
+					Accept(tosy);
+					Skipto1(st_startstatement);
+				}
+			}
+			else {
+				Error(42, token);
+				Skipto1(st_startstatement);
+			}
+		}			
+		else {
+			Accept(assignc);
+			Skipto1(st_startstatement);
+		}		
+	}
+	else
+	{
+		Error(2, token);
+		Skipto1(st_startstatement);
+	}
 	Statement(followers);
 }
 /* Инициализация анализа выражения */
 void GivingStatement(unsigned *followers)
 {
 	unsigned ptra[SET_SIZE];
-	SetDisjunct(af_assignment, followers, ptra);//af_assignment содержит assign
+	//SetDisjunct(af_assignment, followers, ptra);//af_assignment содержит assign
 	Accept(assignc);
 	SetDisjunct(followers, comp_stat, ptra);
 	Expression(ptra);

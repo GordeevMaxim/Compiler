@@ -151,12 +151,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Generation.h" />
     <ClInclude Include="ModulRW.h" />
     <ClInclude Include="Parsing.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="TREE.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Generation.cpp" />
     <ClCompile Include="ModulRW.cpp" />
     <ClCompile Include="Parsing.cpp" />
     <ClCompile Include="pch.cpp">

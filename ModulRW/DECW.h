@@ -4,6 +4,8 @@
 
     /*  Kндш  пюгдекхрекеи  */
 
+	#define  paramval     200
+	#define  paramvar     201
     #define  starc         21               /*  '*'   */
     #define  slashc        60               /*  '/'   */
     #define  equalc        16               /*  '='   */

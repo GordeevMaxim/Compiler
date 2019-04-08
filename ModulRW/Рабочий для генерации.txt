@@ -1,0 +1,30 @@
+program example;
+var a,b,i,k:integer;
+f: char; 
+ flag:boolean;
+begin 
+ReadLn(a,b,flag);
+for i:=1 to 5 do
+    while (flag) do
+    begin
+        repeat
+a := 50; 
+b := 30; 
+a := a + b; 
+b := a - b; 
+a := a - b;
+flag := FALSE;
+until (a=b); 
+if (a < b) then
+       begin
+         k:=a*b;
+		 f:='f';
+       end
+     else begin
+       a := k; 
+       end;
+    end;
+	Write(1.25);
+	WriteLn(a, ' ', b, ' ', flag, '   ', 10);
+	
+end.

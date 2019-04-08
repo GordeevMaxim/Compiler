@@ -7,31 +7,31 @@
 #include <map>
 #include <vector>
 #include <ctype.h>
+#include "TREE.h"
 
-#define ErrMax 99						//максимальное  кол-во ошибок в программе
-#define ErrCount 334					//кол-во ошибок, дл€ кт есть описани€
-
+#define ERRMAX 99						//максимальное  кол-во ошибок в программе
+#define ERRCOUNT 334					//кол-во ошибок, дл€ кт есть описани€
 #define MAX_IDENT   12
 #define bad_Symbol 1000
 #define MAX_DL_IDENT 63
 #define maxint 2147483647
 #define MAX_DL_STRINGC 255
 #define maxreal 2147483647.0
-#define WORDLENGTH 16	/* длина минимальной адресуемой информационной 	*/
-#define PROGS 300		/* ѕ–ќ√–јћћј */ 
-#define TYPES 301		/* “»ѕ */
-#define CONSTS 302		/*  ќЌ—“јЌ“ј */ 
-#define VARS 303		/* ѕ≈–≈ћ≈ЌЌјя */ 
-#define PROCS 304		/* ѕ–ќ÷≈ƒ”–ј */ 
-#define FUNCS 305		/* ‘”Ќ ÷»я */
-#define SCALARS 401		/* cтандартный скал€рный тип */
-#define LIMITEDS 402	/* ограниченный тип */
-#define ENUMS 403		/* перечислимый тип */
-#define ARRAYS 404		/* регул€рный тип (массив) */
-#define REFERENCES 405	/* ссылочный тип */
-#define SETS 406		/* множественный тип */
-#define FILES 407		/* файловый тип */
-#define RECORDS 408		/* комбинированный тип (запись)*/
+#define WORDLENGTH 16			/* длина минимальной адресуемой информационной 	*/
+#define PROGS 300				/* ѕ–ќ√–јћћј */ 
+#define TYPES 301				/* “»ѕ */
+#define CONSTS 302				/*  ќЌ—“јЌ“ј */ 
+#define VARS 303				/* ѕ≈–≈ћ≈ЌЌјя */ 
+#define PROCS 304				/* ѕ–ќ÷≈ƒ”–ј */ 
+#define FUNCS 305				/* ‘”Ќ ÷»я */
+#define SCALARS 401				/* cтандартный скал€рный тип */
+#define LIMITEDS 402			/* ограниченный тип */
+#define ENUMS 403				/* перечислимый тип */
+#define ARRAYS 404				/* регул€рный тип (массив) */
+#define REFERENCES 405			/* ссылочный тип */
+#define SETS 406				/* множественный тип */
+#define FILES 407				/* файловый тип */
+#define RECORDS 408				/* комбинированный тип (запись)*/
 
 #define SET_SIZE   8
 

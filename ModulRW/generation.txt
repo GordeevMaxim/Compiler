@@ -1,0 +1,22 @@
+#include <iostream>
+
+using namespace std;
+
+h, gmytype3;
+dmytype;
+a1, a2, ;
+a1, a2;
+a1, a2;
+a1, a2;
+adfdfgb;
+int a, l;
+b, fa, f);
+f1, f1a1, a2, a3);
+d1, , d2;
+f, k26;
+bool a;
+char c, b, d, a;
+real r;
+int i;
+real int char prabcmytypea);
+int mytype == ;

@@ -1,61 +1,65 @@
 #include "pch.h"
 #include "DECKEY.h"
-#include <stdlib.h>
-#include "ModulRW.h"
 #include "DECW.h"
+#include <stdlib.h>
 
-extern unsigned Symbol;
-extern char ch;
-extern void Accept(unsigned Symbolexpected);
-extern void NextSym();
-extern char NextCh();
-extern bool Belong(unsigned Symbolexpected, unsigned *set);
-extern textposition token;
 
-//-----------------------------------------œ–Œ“Œ“»œ€ ‘”Õ ÷»…(Õ¿◊¿ÀŒ)--------------------------------------------//
+//======================================œ–Œ“Œ“»œ€ ‘”Õ ÷»… —»Õ“¿ —»—(Õ¿◊¿ÀŒ)======================================//
 void Programme(unsigned *followers);
 void Block(unsigned *followers);
 void TypePart(unsigned *followers);
-void Type(unsigned *followers);
+TYPEREC *Type(unsigned *followers);
+TYPEREC *SimpleType(unsigned *followers);
+TYPEREC *LimitedType(unsigned *followers);
+TYPEREC *PerechislType(unsigned *followers);
+TYPEREC *NameType();
 void Constant();
-//void ArrayType(unsigned *followers);
 void VarPart(unsigned *followers);
 void VarDeclaration(unsigned *followers);
-//void ConstPart();
 void ProcFuncPart(unsigned *followers);
 void Statement(unsigned *followers);
-void AssignStatement(unsigned *followers);
-void SimpleType(unsigned *followers);
-void LimitedType();
-//void CompoundType(unsigned *followers);
-//void ReferenceType();
-void PerechislType();
-void NameType();
 void One_Type(unsigned *followers);
 void Un_Int();
-//void BazisType(unsigned *followers);
-//void One_Const();
 void Un_Real();
 void Const_Char();
-//void NameConstant();
-void DeclarationFun(unsigned *followers);
 void DeclarationProc(unsigned *followers);
 void DeclarationProcFun(unsigned *followers);
 void FormalParameters(unsigned *followers, unsigned *fol);
-void HeaderFun(unsigned *followers);
 void HeaderProc(unsigned *followers);
-//void Variable();
 void BeginStatement(unsigned *followers);
-void Factor(unsigned *followers);
-void Term(unsigned *followers);
-void SimpleExpression(unsigned *followers);
-void Expression(unsigned *followers);
+TYPEREC *Factor(unsigned *followers);
+TYPEREC *Term(unsigned *followers);
+TYPEREC *SimpleExpression(unsigned *followers);
+TYPEREC *Expression(unsigned *followers);
+
+bool —ompatible(TYPEREC* type1, TYPEREC * type2);
 void NameFunc(unsigned *followers);
 void CallProc(unsigned *followers);
 void GivingStatement(unsigned *followers);
-//void CaseStatement(unsigned *followers);
 void IfStatement(unsigned *followers);
 void WhileStatement(unsigned *followers);
 void ForStatement(unsigned *followers);
 void RepeatStatement(unsigned *followers);
-//-----------------------------------------œ–Œ“Œ“»œ€ ‘”Õ ÷»…( ŒÕ≈÷)---------------------------------------------//
+/*======================================œ–Œ“Œ“»œ€ ‘”Õ ÷»… —»Õ“¿ —»—( ŒÕ≈÷)======================================*/
+
+
+
+/*=====================================œ–Œ“Œ“»œ€ ‘”Õ ÷»… —≈Ã¿Õ“» ¿(Õ¿◊¿ÀŒ)======================================*/
+NODE *NewIdent(unsigned hashfunc, char *addrname, int classused);
+NODE *SearchIdent(unsigned hashfunc, char *addrname, unsigned *setofclass);
+TYPEREC *NewType(int tcode/*ÍÓ‰ ÚËÔ‡*/);
+void Open_Scope();
+void Dispose_Ids(struct treenode *firstlocal);
+void Dispose_Types(TYPEREC *typechain);
+void Close_Scope();
+/*======================================œ–Œ“Œ“»œ€ ‘”Õ ÷»… —≈Ã¿Õ“» ¿( ŒÕ≈÷)======================================*/
+
+
+
+/*=========================================œ–Œ“Œ“»œ€ ‘”Õ ÷»… “»(Õ¿◊¿ÀŒ)=========================================*/
+unsigned HashFunction(char *name);
+/* ÔÓËÒÍ ÚÂÍÛ˘Â„Ó ËÏÂÌË ‚ Ú‡·ÎËˆÂ ËÏÂÌ */
+void SearchInTable(char *name);
+/* Á‡ÌÂÒÂÌËÂ ÚÂÍÛ˘Â„Ó ËÏÂÌË ‚ Ú‡·ÎËˆÛ ËÏÂÌ */
+void WriteName(char name[]);
+/*==========================================œ–Œ“Œ“»œ€ ‘”Õ ÷»… “»( ŒÕ≈÷)=========================================*/
